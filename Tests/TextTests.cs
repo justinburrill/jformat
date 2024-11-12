@@ -1,17 +1,9 @@
 using JFormat;
 using System.Text;
-namespace JFormatTests
+namespace Tests
 {
-    public class Tests
+    public class TextTests
     {
-        [Fact]
-        public void JsonFormatting1()
-        {
-            string x = JsonFormatter.FormatString(@"""hey"":{}");
-            string y = @"""hey"": {
-}";
-            Assert.Equal(x, y);
-        }
 
         [Fact]
         public void ValidBrackets1()
@@ -56,39 +48,13 @@ namespace JFormatTests
         }
 
         [Fact]
-        public void ValidJsonBasics()
+        public void RemoveWhitespace()
         {
-            Assert.True(JsonFormatter.IsValidJson(""));
-            Assert.True(JsonFormatter.IsValidJson("{}"));
-            string b = @"{""key"": ""value""}";
-            Assert.True(JsonFormatter.IsValidJson(b));
-            string c = @"{""key"": ""value"",}";
-            Assert.True(JsonFormatter.IsValidJson(c));
+            Assert.Equal("abc", JsonFormatter.RemoveWhitespace(" a b c "));
+            string s = @"a
 
-
-            // value not in quotes
-            string A = @"{""key"": value}";
-            Assert.False(JsonFormatter.IsValidJson(A));
-            // no colon
-            string B = @"{""key"" ""value""}";
-            Assert.False(JsonFormatter.IsValidJson(B));
-            // broken brackets 
-            string C = @"""key"" ""value""}";
-            Assert.False(JsonFormatter.IsValidJson(C));
-        }
-
-        [Fact]
-        public void ValidJson1()
-        {
-            string A = @"{
-    ""test"": {
-        ""key1"": 1,
-        ""key2"": 2,
-        ""key3"": 3,
-        ""key4"": 4
-    }
-}";
-            Assert.True(JsonFormatter.IsValidJson(A));
+b                   c";
+            Assert.Equal("abc", JsonFormatter.RemoveWhitespace(s));
         }
     }
 }
