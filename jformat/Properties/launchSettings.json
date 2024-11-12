@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "jformat": {
+      "commandName": "Project",
+      "commandLineArgs": "arg1 arg2"
+    }
+  }
+}
