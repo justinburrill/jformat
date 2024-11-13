@@ -65,6 +65,19 @@ namespace Tests
             Assert.True(JsonFormatter.IsValidJson(A));
         }
 
+        [Fact]
+        public void ValidValues()
+        {
+            Assert.True(JsonFormatter.IsValidValue(@"null"));
+            Assert.True(JsonFormatter.IsValidValue(@"true"));
+            Assert.True(JsonFormatter.IsValidValue(@"false"));
+            Assert.True(JsonFormatter.IsValidValue(@"123"));
+            Assert.True(JsonFormatter.IsValidValue(@"123.123"));
+            Assert.True(JsonFormatter.IsValidValue(@"1e5"));
+            Assert.True(JsonFormatter.IsValidValue(@""""""));
+            Assert.True(JsonFormatter.IsValidValue(@"""str"""));
+            Assert.False(JsonFormatter.IsValidValue(@""));
+        }
 
     }
 }

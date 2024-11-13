@@ -4,6 +4,65 @@ namespace Tests
 {
     public class TextTests
     {
+        [Fact]
+        public void ValidNumberBasics()
+        {
+            Assert.True(JsonFormatter.IsValidNumber("00"));
+            Assert.True(JsonFormatter.IsValidNumber("1"));
+            Assert.True(JsonFormatter.IsValidNumber("2.0"));
+            Assert.True(JsonFormatter.IsValidNumber("3.10"));
+            Assert.True(JsonFormatter.IsValidNumber("04.1234"));
+
+            Assert.False(JsonFormatter.IsValidNumber(" "));
+            Assert.False(JsonFormatter.IsValidNumber(""));      // empty str
+            Assert.False(JsonFormatter.IsValidNumber("1.0.0")); // multiple decimals
+            Assert.False(JsonFormatter.IsValidNumber("1a")); // letters
+            Assert.False(JsonFormatter.IsValidNumber("12a1.12e3")); // letters
+            Assert.False(JsonFormatter.IsValidNumber("1ea3")); // letters
+        }
+
+        [Fact]
+        public void ValidNumberExponents()
+        {
+            Assert.True(JsonFormatter.IsValidNumber("4e5"));
+            Assert.True(JsonFormatter.IsValidNumber("5E4"));
+            Assert.True(JsonFormatter.IsValidNumber("213.123e12"));
+            Assert.False(JsonFormatter.IsValidNumber("1.0E1.0")); // decimal in exponents
+
+            Assert.False(JsonFormatter.IsValidNumber("4.12e3e3")); // multiple exponents
+            Assert.False(JsonFormatter.IsValidNumber("1e"));  // empty exponent
+            Assert.False(JsonFormatter.IsValidNumber("e1"));  // empty mantissa 
+        }
+
+        [Fact]
+        public void ValidNumberComplicated()
+        {
+            Assert.True(JsonFormatter.IsValidNumber("43211.1234132e4132432"));
+            Assert.False(JsonFormatter.IsValidNumber("09432100 .2134e132"));
+            Assert.False(JsonFormatter.IsValidNumber("43100e1324.1234"));
+            Assert.False(JsonFormatter.IsValidNumber("312. 43214132e 3"));
+            Assert.False(JsonFormatter.IsValidNumber(""));
+            Assert.False(JsonFormatter.IsValidNumber("1+1e5"));
+            Assert.False(JsonFormatter.IsValidNumber("-1e-1.0"));
+            Assert.False(JsonFormatter.IsValidNumber("123..2321"));
+        }
+
+        [Fact]
+        public void ValidNumberSigns()
+        {
+            Assert.True(JsonFormatter.IsValidNumber("-1"));
+            Assert.True(JsonFormatter.IsValidNumber("-1e-1"));
+            Assert.True(JsonFormatter.IsValidNumber("1.0e+1"));
+            Assert.True(JsonFormatter.IsValidNumber("5.132e+23"));
+
+            Assert.False(JsonFormatter.IsValidNumber("-7.1234-e23"));
+        }
+
+        [Fact]
+        public void ValidNumberLeadingPlus()
+        {
+            Assert.False(JsonFormatter.IsValidNumber("+5.132e+23")); // no leading + allowed in mantissa
+        }
 
         [Fact]
         public void ValidBrackets1()

@@ -1,25 +1,29 @@
 ﻿
+using System.Reflection.Metadata.Ecma335;
+using System.Text;
+
 namespace JFormat
 {
-    public class JsonFormatter
+    static public class JsonFormatter
     {
-        static string RemoveWhitespace(string input)
+        public static string RemoveWhitespace(string input)
         {
-            String outstr = "";
+            var outstr = new StringBuilder();
             foreach (var c in input)
             {
-                List<char> ws = [' ', '\n'];
+                List<char> ws = [' ', '\n', '\t', '\r'];
                 if (!ws.Contains(c))
                 {
                     outstr.Append(c);
                 }
             }
-            return outstr;
+            return outstr.ToString();
         }
 
         public static bool IsValidJson(string input)
         {
-            return IsValidBrackets(input);
+            return false;
+            //return IsValidBrackets(input) && IsValidQuotes(input);
         }
 
         public static bool IsValidBrackets(string input)
@@ -49,33 +53,104 @@ namespace JFormat
             return currently_open_pairs.Count == 0;
         }
 
+        public static bool IsValidQuotes(string input)
+        {
+            int quoteCount = 0;
+            foreach (char c in input)
+            {
+                if (c == '"') quoteCount++;
+            }
+            return quoteCount % 2 == 0;
+        }
+
+        public static bool IsValidValue(string input)
+        {
+            if (new List<string> { "true", "false", "null" }.Contains(input)) return true;
+            if (IsValidString(input)) return true;
+            if (IsValidNumber(input)) return true;
+            // anything else is either an object or array
+
+            return false;
+        }
+
+        public static bool IsValidString(string input)
+        {
+            if (input.Length < 2) return false;
+            char quote = '"';
+            return input[0] == quote && input.Last() == quote;
+        }
+
+        public static bool IsValidNumber(string input)
+        {
+            var signs = new List<char> { '+', '-' };
+            Func<string, bool> validOnlyDigits = (string x) => x.All(Char.IsDigit) && x.Length > 0;
+            Func<string, string> strWithoutSign = (string x) =>
+            {
+                if (x.Length == 0) { return x; }
+                bool hasSign = signs.Contains(x[0]);
+                return hasSign ? x[1..] : x;
+            };
+            Func<string, bool> validWithSign = (string x) =>
+            {
+                return validOnlyDigits(strWithoutSign(x));
+            };
+            Func<string, bool> validWithNegOnly = (string x) =>
+            {
+                return x.Length > 0 && validOnlyDigits(x[0] == '-' ? x[1..] : x);
+            };
+
+            var split_exponent = input.ToLower().Split('e');
+            if (split_exponent.Length > 2) { return false; } // multiple exponents
+            if (split_exponent.Length > 1)
+            {
+                string exponent = (split_exponent[1]);
+                if (!validWithSign(exponent)) { return false; }
+            }
+            var split_decimal = split_exponent[0].Split('.');
+            if (split_decimal.Length > 2 || split_decimal.Length < 1) { return false; } // multiple decimal points
+            else if (split_decimal.Length == 1) { return validWithNegOnly(split_decimal[0]); }
+            else if (split_decimal.Length == 2) { return validWithNegOnly(split_decimal[0]) && validOnlyDigits(split_decimal[1]); }
+            else { throw new Exception("this wasn't supposed to happen"); }
+
+        }
+
         public static string FormatString(string input)
         {
             var no_whitespace = RemoveWhitespace(input);
             int tab_depth = 0;
-            string out_str = "";
-            for (int i = 0; i<no_whitespace.Length;i++)
+            var str = new StringBuilder();
+
+            for (int i = 0; i < no_whitespace.Length; i++)
             {
                 char c = no_whitespace[i];
+                str.Append(new string('\t', tab_depth)); // add tabs
                 switch (c)
                 {
+                    case ',':
+                        str.Append(c);
+                        str.Append(Environment.NewLine);
+                        break;
                     case ':':
-                        out_str.Append(c);
-                        out_str.Append(' ');
+                        str.Append(c);
+                        str.Append(' ');
                         break;
                     case '{':
-                        out_str.Append('\n');
                         tab_depth += 1;
-                        out_str.Concat(new string('\t', tab_depth)); // add tabs
-                        out_str.Append(c);
+                        str.Append(c);
+                        str.Append(Environment.NewLine);
+                        break;
+                    case '}':
+                        tab_depth -= 1;
+                        str.Append(c);
+                        str.Append(Environment.NewLine);
                         break;
                     default:
-                        out_str.Append(c);
+                        str.Append(c);
                         break;
                 }
             }
 
-            return out_str;
+            return str.ToString();
         }
     }
 }
