@@ -114,6 +114,10 @@ namespace Tests
 
 b                   c";
             Assert.Equal("abc", JsonFormatter.RemoveWhitespace(s));
+            string s2 = "{\"my key\": null}";
+            Assert.Equal("{\"my key\":null}", JsonFormatter.RemoveWhitespace(s2));
+            string s3 = @"{ ""my text \""in quotes\""\"""": false }";
+            Assert.Equal(@"{""my text \""in quotes\""\"""":false}", JsonFormatter.RemoveWhitespace(s3));
         }
     }
 }
