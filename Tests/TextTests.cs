@@ -118,6 +118,12 @@ b                   c";
             Assert.Equal("{\"my key\":null}", JsonFormatter.RemoveWhitespace(s2));
             string s3 = @"{ ""my text \""in quotes\""\"""": false }";
             Assert.Equal(@"{""my text \""in quotes\""\"""":false}", JsonFormatter.RemoveWhitespace(s3));
+            string s4 = @"[1, ""a b"", 3]";
+            string s4_after = @"[1,""a b"",3]";
+            Assert.Equal(s4_after, JsonFormatter.RemoveWhitespace(s4));
+            string s5 = @"[ 123, [ ""heyyy"", ""test words"" ]]";
+            string s5_after = @"[123,[""heyyy"",""test words""]]";
+            Assert.Equal(s5_after, JsonFormatter.RemoveWhitespace(s5));
         }
     }
 }

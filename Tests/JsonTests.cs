@@ -1,14 +1,35 @@
 ﻿using JFormat;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Security.Cryptography.X509Certificates;
-using System.Text;
-using System.Threading.Tasks;
+
 namespace Tests
 {
     public class JsonTests
     {
+        [Fact]
+        public void ValidArrayBasics()
+        {
+            Assert.True(JsonFormatter.IsValidArray("[]"));
+            Assert.True(JsonFormatter.IsValidArray("[1, 2, 3]"));
+            Assert.True(JsonFormatter.IsValidArray(@"[""what's up"", 2, ""another one""]"));
+            Assert.True(JsonFormatter.IsValidArray("[true, false, null]"));
+
+            // trailing comma
+            Assert.False(JsonFormatter.IsValidArray("[1, 2, 3, ]"));
+            Assert.False(JsonFormatter.IsValidArray("["));
+        }
+
+        [Fact]
+        public void ValidArrayObjs()
+        {
+            Assert.True(JsonFormatter.IsValidArray(@"[{
+    ""wha's up"": {
+        ""heyy"": 5
+    }
+}, {
+    ""another thing"": 5,
+    ""also"": 1
+}]"));
+        }
+
         [Fact]
         public void TokenizeObjectBasics()
         {
@@ -117,8 +138,10 @@ namespace Tests
             Assert.False(JsonFormatter.IsValidJsonObj(B)); // missing }
         }
 
+
+
         [Fact]
-        public void ValidValues()
+        public void ValidValues1()
         {
             Assert.True(JsonFormatter.IsValidValue(@"null"));
             Assert.True(JsonFormatter.IsValidValue(@"true"));
@@ -128,9 +151,32 @@ namespace Tests
             Assert.True(JsonFormatter.IsValidValue(@"1e5"));
             Assert.True(JsonFormatter.IsValidValue(@""""""));
             Assert.True(JsonFormatter.IsValidValue(@"""str"""));
-            Assert.True(JsonFormatter.IsValidValue(@"{}"));
-            Assert.True(JsonFormatter.IsValidValue(@"[1, 2, 3, 4, 5, 6]"));
             Assert.False(JsonFormatter.IsValidValue(@""));
+        }
+
+        [Fact]
+        public void TokenizeArrayBasic()
+        {
+            string input = "[1, 2, 3]";
+            List<string> strs = ["1", "2", "3"];
+            Assert.Equal(strs, JsonFormatter.TokenizeArray(input));
+        }
+
+        [Fact]
+        public void TokenizeArrayNested()
+        {
+            string input = @"[ ""abc"", 123, [1, 2, 3] ]";
+            List<string> strs = ["abc", "123", "[1, 2, 3]"];
+            Assert.Equal(strs, JsonFormatter.TokenizeArray(input));
+        }
+
+        [Fact]
+        public void ValidArrays()
+        {
+            Assert.True(JsonFormatter.IsValidArray(@"{}"));
+            Assert.True(JsonFormatter.IsValidArray(@"[1, 2, 3, 4, 5, 6]"));
+            Assert.True(JsonFormatter.IsValidArray(@"[[1,2], [1,2]]"));
+            Assert.True(JsonFormatter.IsValidArray(@"[{""key"": ""value""}, [1, 2, 3]]"));
         }
 
     }

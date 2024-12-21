@@ -1,28 +1,10 @@
 ﻿
-using System.Net.Http.Headers;
-using System.Reflection.Metadata.Ecma335;
 using System.Text;
 
 namespace JFormat
 {
     static public class JsonFormatter
     {
-        public static string RemoveWhitespace(string input)
-        {
-            int quotecount = 0;
-            var outstr = new StringBuilder();
-            foreach (var c in input)
-            {
-                if (c == '"') { quotecount++; }
-                List<char> ws = [' ', '\n', '\t', '\r'];
-                if (!ws.Contains(c) || quotecount % 2 != 0)
-                {
-                    outstr.Append(c);
-                }
-            }
-            return outstr.ToString();
-        }
-
         enum TokenType
         {
             Key,
@@ -33,6 +15,26 @@ namespace JFormat
             Colon,
             // more?
         }
+
+        public static string RemoveWhitespace(string input)
+        {
+            int quotecount = 0;
+            var outstr = new StringBuilder();
+            char prev = input.Length > 0 ? input[0] : '\0';
+            List<char> ws = [' ', '\n', '\t', '\r'];
+            foreach (var c in input)
+            {
+                if (c == '"' && prev != '\\') { quotecount++; }
+                if (!ws.Contains(c) || quotecount % 2 != 0)
+                {
+                    outstr.Append(c);
+                }
+                prev = c;
+            }
+            return outstr.ToString();
+        }
+
+
 
         public static List<string> TokenizeJsonObj(string input)
         {
@@ -155,6 +157,7 @@ namespace JFormat
 
         public static bool IsValidValue(string input)
         {
+            if (input.Length == 0) return false;
             if (new List<string> { "true", "false", "null" }.Contains(input)) return true;
             if (IsValidString(input)) return true;
             if (IsValidNumber(input)) return true;
@@ -215,6 +218,63 @@ namespace JFormat
 
         }
 
+        public static List<string> TokenizeArray(string input)
+        {
+            input = RemoveWhitespace(input);
+            List<string> items = [];
+            int openBracketCount = 0;
+            List<char> openBrackets = ['{', '[', '('];
+            List<char> closeBrackets = ['}', ']', ')'];
+            StringBuilder temp = new();
+            foreach (char ch in input)
+            {
+                if (openBrackets.Contains(ch))
+                {
+                    openBracketCount++;
+                    if (openBracketCount == 1) { continue; }
+                }
+                else if (closeBrackets.Contains(ch))
+                {
+                    openBracketCount--;
+                }
+
+                if (openBracketCount == 1)
+                {
+                    if (ch == ',')
+                    {
+                        items.Add(temp.ToString());
+                        temp.Clear();
+                    }
+                    else
+                    {
+                        temp.Append(ch);
+                    }
+                }
+
+            }
+            if (temp.Length > 0)
+            {
+                items.Add(temp.ToString());
+            }
+            return items;
+        }
+
+        public static bool IsValidArray(string input)
+        {
+            if (input.Length < 2) { return false; }
+            if (input[0] != '[' || input[^1] != ']')
+            {
+                return false;
+            }
+            List<string> tokens = TokenizeArray(input);
+
+            foreach (string item in tokens)
+            {
+                IsValidValue(item);
+            }
+            return false;
+        }
+
         public static string FormatJsonString(string input)
         {
             if (!IsValidJsonObj(input)) { throw new ArgumentException($"Invalid JSON provided to FormatJsonString: {input}"); }
@@ -255,7 +315,6 @@ namespace JFormat
 
             return str.ToString();
         }
-
 
         static public void FormatByFilepath(string path)
         {

@@ -5,18 +5,26 @@ namespace JFormat
 {
     class JFormat
     {
-        static string getFileType(string filename)
+        static string GetFileType(string filename)
         {
             var splits = filename.Split('.');
             if (splits.Length == 1)
             {
                 throw new ArgumentException($"invalid filetype {filename}");
             }
-            return splits[splits.Length - 1];
+            return splits[^1];
         }
-        static bool isSupportedFileType(string filename)
+
+        static bool IsSupportedFileType(string filename)
         {
-            return ((string[])(["json"])).Contains(getFileType(filename));
+            try
+            {
+                return ((string[])(["json"])).Contains(GetFileType(filename));
+            }
+            catch
+            {
+                return false;
+            }
         }
 
         static void Main(string[] args)
@@ -25,6 +33,11 @@ namespace JFormat
             var filesToFormat = new List<String>();
             //string filepath = "";
             var cwd = Directory.GetCurrentDirectory();
+            if (args.Length == 0)
+            {
+                Console.WriteLine("No files provided.");
+                return;
+            }
 
             foreach (var arg in args)
             {
@@ -34,13 +47,13 @@ namespace JFormat
                         filesToFormat = (List<string>)filesToFormat.Concat(Directory.GetFiles(cwd));
                         break;
                     default:
-                        if (isSupportedFileType(arg))
+                        if (IsSupportedFileType(arg))
                         {
                             filesToFormat.Append(Path.GetFullPath(arg));
                         }
                         else
                         {
-                            Console.WriteLine($"can't format {arg}");
+                            Console.WriteLine($"Can't format file '{arg}' because that filetype is not supported.");
                         }
                         break;
                 }
