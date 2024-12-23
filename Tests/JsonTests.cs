@@ -24,10 +24,13 @@ namespace Tests
     ""wha's up"": {
         ""heyy"": 5
     }
-}, {
+},
+{
     ""another thing"": 5,
     ""also"": 1
-}]"));
+}
+]
+            "));
         }
 
         [Fact]
@@ -56,6 +59,25 @@ namespace Tests
         }
 
         [Fact]
+        public void TokenizeObjects2()
+        {
+            string json = @"
+
+  {
+    ""an array"": [
+      1,
+      2,
+      3
+    ],
+    ""other"": true
+  }
+";
+            List<string> strs = ["{", "\"an array\"", ":", "[1,2,3]", ",", "\"other\"", ":", "true", "}"];
+            Assert.Equal(strs, JsonFormatter.TokenizeJsonObj(json));
+        }
+
+
+        [Fact]
         public void TokenizeObjectNested()
         {
             string json = @"
@@ -71,36 +93,31 @@ namespace Tests
             Assert.Equal(tokens, JsonFormatter.TokenizeJsonObj(json));
         }
 
-        //        [Fact]
-        //        public void JsonFormatting1()
-        //        {
-        //            string x = @"{}";
-        //            string y = "{\r\n\t\r\n}\r\n";
-        //            string x2 = @"""hey"":{}";
-        //            string y2 = @"""hey"": {
-        //}";
-        //            string x3 = @"{""test"":{""test2"":1}}";
-        //            string y3 = @"{
-        //    ""test"": {
-        //        ""test2"": 1
-        //    }
-        //}";
-        //            Assert.Equal(y, JsonFormatter.FormatJsonString(x));
-        //            Assert.Equal(y2, JsonFormatter.FormatJsonString(x2));
-        //            Assert.Equal(y, JsonFormatter.FormatJsonString(y));
-        //            Assert.Equal(y3, JsonFormatter.FormatJsonString(x3));
-        //        }
-
-
         [Fact]
         public void ValidJsonBasics()
         {
-            string a = @"""hey"":{}";
             string b = @"{""key"": ""value""}";
-            Assert.True(JsonFormatter.IsValidJsonObj("{}"));
-            Assert.True(JsonFormatter.IsValidJsonObj(a));
-            Assert.True(JsonFormatter.IsValidJsonObj(b));
+            Assert.True(JsonFormatter.IsValidJson("{}"));
+            Assert.True(JsonFormatter.IsValidJson(b));
 
+            string a = @"[1,2,3]";
+            Assert.True(JsonFormatter.IsValidJson(a));
+        }
+
+        [Fact]
+        public void ValidJsonFiles()
+        {
+            string str = File.ReadAllText("test1.json");
+            Assert.True(JsonFormatter.IsValidJson(str));
+            string str2 = File.ReadAllText("test2.json");
+            Assert.True(JsonFormatter.IsValidJson(str2));
+        }
+
+        [Fact]
+        public void InvalidJsonObjsBasics()
+        {
+            string a = @"""hey"":{}";
+            Assert.False(JsonFormatter.IsValidJsonObj(a));
             // trailing comma not allowed :(
             string c = @"{""key"": ""value"",}";
             Assert.False(JsonFormatter.IsValidJsonObj(c));
@@ -157,23 +174,25 @@ namespace Tests
         [Fact]
         public void TokenizeArrayBasic()
         {
+            string empty = "[]";
             string input = "[1, 2, 3]";
             List<string> strs = ["1", "2", "3"];
             Assert.Equal(strs, JsonFormatter.TokenizeArray(input));
+            Assert.Equal([], JsonFormatter.TokenizeArray(empty));
         }
 
         [Fact]
         public void TokenizeArrayNested()
         {
             string input = @"[ ""abc"", 123, [1, 2, 3] ]";
-            List<string> strs = ["abc", "123", "[1, 2, 3]"];
+            List<string> strs = ["\"abc\"", "123", "[1,2,3]"];
             Assert.Equal(strs, JsonFormatter.TokenizeArray(input));
         }
 
         [Fact]
         public void ValidArrays()
         {
-            Assert.True(JsonFormatter.IsValidArray(@"{}"));
+            Assert.True(JsonFormatter.IsValidArray(@"[]"));
             Assert.True(JsonFormatter.IsValidArray(@"[1, 2, 3, 4, 5, 6]"));
             Assert.True(JsonFormatter.IsValidArray(@"[[1,2], [1,2]]"));
             Assert.True(JsonFormatter.IsValidArray(@"[{""key"": ""value""}, [1, 2, 3]]"));

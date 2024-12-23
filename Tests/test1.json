@@ -1,0 +1,21 @@
+﻿{
+  "installed": {
+    "hello": 123,
+    "whats up": 15
+  },
+  "some stuff": {
+    "json field": null
+  },
+  "etc": {
+    "an array": [
+      1,
+      2,
+      3
+    ],
+    "more": {
+      "fields": {
+        "here": "yes"
+      }
+    }
+  }
+}

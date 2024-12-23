@@ -5,6 +5,11 @@ namespace JFormat
 {
     static public class JsonFormatter
     {
+        public static bool IsValidJson(string input)
+        {
+            return IsValidJsonObj(input) || IsValidArray(input);
+        }
+
         enum TokenType
         {
             Key,
@@ -34,14 +39,13 @@ namespace JFormat
             return outstr.ToString();
         }
 
-
-
         public static List<string> TokenizeJsonObj(string input)
         {
             input = RemoveWhitespace(input);
             List<string> strings = new();
             string temptoken = "";
             TokenType? next = TokenType.Key;
+            int arrays_deep = 0;
 
             foreach (char ch in input)
             {
@@ -51,14 +55,29 @@ namespace JFormat
                     case ':' or ',':
                         matched = true;
                         break;
-                    case '{':
+                    case '{' or '}':
                         matched = true;
                         next = TokenType.Key;
                         break;
-                    case '}':
-                        matched = true;
-                        next = TokenType.Key;
+                    case '[':
+                        arrays_deep++;
+                        next = TokenType.Value;
                         break;
+                    case ']':
+                        arrays_deep--;
+                        next = TokenType.ClosingBracket;
+                        if (arrays_deep == 0)
+                        {
+                            temptoken += ch;
+                            strings.Add(temptoken);
+                            temptoken = "";
+                        }
+                        break;
+                }
+                if (arrays_deep > 0)
+                {
+                    temptoken += ch;
+                    continue;
                 }
                 if (matched)
                 {
@@ -97,6 +116,7 @@ namespace JFormat
 
         public static bool IsValidJsonObj(string input)
         {
+            if (input[0] != '{' || input.Last() != '}') return false;
             var tokens = TokenizeJsonObj(input);
             int bracketsDeep = 0;
             List<TokenType> validNextTypes = [TokenType.OpenBracket, TokenType.Key];
@@ -154,15 +174,14 @@ namespace JFormat
             return currently_open_pairs.Count == 0;
         }
 
-
         public static bool IsValidValue(string input)
         {
             if (input.Length == 0) return false;
             if (new List<string> { "true", "false", "null" }.Contains(input)) return true;
             if (IsValidString(input)) return true;
             if (IsValidNumber(input)) return true;
+            if (IsValidArray(input)) return true;
             if (IsValidJsonObj(input)) return true;
-            // anything else is either an object or array
 
             return false;
         }
@@ -236,6 +255,7 @@ namespace JFormat
                 else if (closeBrackets.Contains(ch))
                 {
                     openBracketCount--;
+                    if (openBracketCount == 0) { continue; }
                 }
 
                 if (openBracketCount == 1)
@@ -250,9 +270,13 @@ namespace JFormat
                         temp.Append(ch);
                     }
                 }
+                else
+                {
+                    temp.Append(ch);
+                }
 
             }
-            if (temp.Length > 0)
+            if (items.Count > 0)
             {
                 items.Add(temp.ToString());
             }
@@ -261,6 +285,7 @@ namespace JFormat
 
         public static bool IsValidArray(string input)
         {
+            input = (input.Trim());
             if (input.Length < 2) { return false; }
             if (input[0] != '[' || input[^1] != ']')
             {
@@ -270,9 +295,12 @@ namespace JFormat
 
             foreach (string item in tokens)
             {
-                IsValidValue(item);
+                if (!IsValidValue(item))
+                {
+                    return false;
+                }
             }
-            return false;
+            return true;
         }
 
         public static string FormatJsonString(string input)
