@@ -1,0 +1,23 @@
+{
+  "exclude": [
+    "**/bin",
+    "**/bower_components",
+    "**/jspm_packages",
+    "**/node_modules",
+    " \"   **/obj",
+
+
+    "**/platforms"
+  ],
+  "another key": {
+    "key1": [ "value1", "value2", "value3 with bullshit: \"" ],
+    "key2": {
+      "stuff": 5,
+
+
+
+
+      "more": null,
+      "asdfnbii": []
+    }  }
+}
