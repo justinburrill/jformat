@@ -198,13 +198,8 @@ public static class JsonFormatter
 
     public static bool IsValidString(string input)
     {
-        if (input.Length < 2)
-        {
-            return false;
-        }
-
         char quote = '"';
-        if (input[0] != quote || input.Last() != quote)
+        if (input.Length < 2 || input[0] != quote || input.Last() != quote)
         {
             return false;
         }
@@ -212,30 +207,49 @@ public static class JsonFormatter
         //  && IsValidQuotes(input); // not checking for quotes anymore? think this was useless
 
         bool escaping = false;
-        bool hexing = true;
-        string hextoken = "";
+        bool readingHexEscape = false;
+        StringBuilder hextoken = new();
         foreach (char ch in input)
         {
-            if (hexing)
+            // these control characters are not allowed
+            if ((int)ch is < 32 or >= 127)
             {
-                if (hextoken.Length == 5) // u and 5 chars
+                return false;
+            }
+            // these characters must be escaped
+            if (ch == quote && !escaping)
+            {
+                return false;
+            }
+            // check for /uXXXX type escapes
+            if (readingHexEscape)
+            {
+                if (hextoken.Length == 5) // u and 4 chars
                 {
-                    if (!IsValidEscape(hextoken)) { return false; }
+                    if (!IsValidEscape(hextoken.ToString()))
+                    {
+                        return false;
+                    }
                     // reset allat
-                    hextoken = "";
-                    hexing = false;
+                    hextoken.Clear();
+                    readingHexEscape = false;
                     escaping = false;
                     break;
                 }
                 else
                 {
                     hextoken.Append(ch);
+                    continue;
                 }
             }
+
             if (escaping)
             {
-                if (ch == 'u') { hextoken += ch; hexing = true; continue; } // need more characters if it's a hex code thing
-                if (!IsValidEscape(ch)) { return false; }
+                if (ch == 'u') { hextoken.Append(ch); readingHexEscape = true; continue; } // need more characters if it's a hex code thing
+                if (!IsValidEscape(ch))
+                {
+                    return false;
+                }
                 escaping = false;
                 continue;
             }
@@ -245,9 +259,15 @@ public static class JsonFormatter
             }
         }
 
+        // escaping should be true here if the last character is a backslash
         return escaping == false && hextoken.Length == 0;
     }
 
+    /// <summary>
+    /// Pass in a character to see if it is "escapable"
+    /// </summary>
+    /// <param name="ch"></param>
+    /// <returns></returns>
     public static bool IsValidEscape(char ch)
     {
         var options = new List<char> { '/', '\\', 'b', 'f', 'n', 'r', 't', '"' };
@@ -426,10 +446,10 @@ public static class JsonFormatter
     }
 
     /// <summary>
-    /// Checks if every digit in the string is
+    /// Checks if every digit in the string is a letter A-Z/a-z or a digit 0-9
     /// </summary>
     /// <param name="str">The string to be checked</param>
-    /// <returns>A boolean `true` if valid, if invalid</returns>
+    /// <returns>A boolean <c>true</c> if valid, <c>false</c> if invalid</returns>
     public static bool IsValidHexDigits(string str)
     {
         char[] chars = "0123456789abcdef".ToCharArray();
@@ -444,6 +464,10 @@ public static class JsonFormatter
         return true;
     }
 
+    /// <summary>
+    /// Format file in place
+    /// </summary>
+    /// <param name="path">Relative path of the .json file</param>
     public static void FormatByFilepath(string path)
     {
         StreamReader sr = new(path);

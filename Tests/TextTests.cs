@@ -61,6 +61,8 @@ public class TextTests
     public void ValidNumberLeadingPlus()
     {
         Assert.False(IsValidNumber("+5.132e+23")); // no leading + allowed in mantissa
+        Assert.False(IsValidNumber("+1"));
+        Assert.True(IsValidNumber("-1.0e+0"));
     }
 
     [Fact]
@@ -108,14 +110,40 @@ public class TextTests
     [Fact]
     public void ValidStringsWithQuotes()
     {
-        string str1 = "\"[\"**/bin\",\"**/bower_components\",\"**/jspm_packages\",\"**/node_modules\",\" \\\"   **/obj\",\"**/platforms\"]\"";
-        Assert.True(IsValidString(str1));
-        string str2 = @""" "" "" a "" a "" ,,,,, ; ; ; ""    """"""   """;
-        Assert.True(IsValidString(str2));
-        Assert.True(IsValidString(@""""""));
+        // I don't want this to work! all quotes should be escaped
+        //string str1 = "\"[\"**/bin\",\"**/bower_components\",\"**/jspm_packages\",\"**/node_modules\",\" \\\"   **/obj\",\"**/platforms\"]\"";
+        //Assert.True(IsValidString(str1));
+        //string str2 = @""" "" "" a "" a "" ,,,,, ; ; ; ""    """"""   """;
+        //Assert.True(IsValidString(str2));
+        //Assert.True(IsValidString(@""""""));
 
         Assert.False(IsValidString(""));
-        Assert.False(IsValidString("\""));
+        Assert.False(IsValidString("\"\"\"")); // single unescaped quote in the string (no good)
+        Assert.False(IsValidString("\"\"\"\"")); // double unescaped quote in the string (no good)
+        Assert.True(IsValidString("\" \\\" \"")); // escaped quote in the string (good)
+        Assert.False(IsValidString("\"")); // quote is not ended
+        Assert.False(IsValidString(@"""")); // quote is not ended
+        Assert.True(IsValidString(@"""""")); // unescaped quotes
+        Assert.True(IsValidString(@""" \"" """)); // valid escaped quote
+    }
+
+    [Fact]
+    public void ValidStringsWithEscapes()
+    {
+        // only valid escapes ", b, n, \, etc
+        string str1 = "\"  \\b \\n \\\\ \\u1234 \\u4321  \"";
+        Assert.True(IsValidString(str1));
+        string str2 = "\" \b \"";
+        Assert.False(IsValidString(str2));
+        string str3 = "\" \n \"";
+        Assert.False(IsValidString(str3));
+        string str4 = "\" \\ \"";
+        Assert.False(IsValidString(str4)); // unescaped backlash
+        string str5 = "\" \\\n \"";
+        Assert.False(IsValidString(str5)); // no newlines!!!
+        string str6 = "\" \\\\ \"";
+        Assert.True(IsValidString(str6)); // escaped backslashed
+        Assert.False(IsValidString("\"\\\"")); //single backslash unescaped
     }
 
     [Fact]

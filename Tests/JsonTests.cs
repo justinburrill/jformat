@@ -111,16 +111,19 @@ public class JsonTests
         string str2 = File.ReadAllText("./examples/test2.json");
         Assert.True(IsValidJson(str1));
         Assert.True(IsValidJson(str2));
-
     }
 
     [Fact]
     public void ValidJsonFilesWithBS()
     {
-
         string str3 = File.ReadAllText("./examples/test3.json");
-
         Assert.True(IsValidJson(str3));
+    }
+
+    [Fact]
+    public void ValidJsonFilesExternal()
+    {
+        string json = File.ReadAllText("./examples/navigation.json");
     }
 
     [Fact]
