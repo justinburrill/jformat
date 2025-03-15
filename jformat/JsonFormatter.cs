@@ -1,7 +1,9 @@
 ﻿
 using System.Text;
 
-namespace JFormat;
+using jformat.extensions;
+
+namespace jformat;
 
 public static class JsonFormatter
 {
@@ -44,7 +46,7 @@ public static class JsonFormatter
     {
         input = RemoveWhitespace(input);
         List<string> strings = [];
-        string temptoken = "";
+        StringBuilder temptoken = new();
         TokenType? next = TokenType.Key;
         int arrays_deep = 0;
 
@@ -78,23 +80,23 @@ public static class JsonFormatter
                     next = TokenType.ClosingBracket;
                     if (arrays_deep == 0)
                     {
-                        temptoken += ch;
-                        strings.Add(temptoken);
-                        temptoken = "";
+                        temptoken.Append(ch);
+                        strings.Add(temptoken.ToString());
+                        temptoken.Clear();
                     }
                     break;
             }
             if (arrays_deep > 0)
             {
-                temptoken += ch;
+                temptoken.Append(ch);
                 continue;
             }
             if (matched)
             {
                 if (temptoken.Length > 0)
                 {
-                    strings.Add(temptoken);
-                    temptoken = "";
+                    strings.Add(temptoken.ToString());
+                    temptoken.Clear();
                 }
                 strings.Add(ch.ToString());
             }
@@ -102,7 +104,7 @@ public static class JsonFormatter
             {
                 if (next is TokenType.Key or TokenType.Value)
                 {
-                    temptoken += ch;
+                    temptoken.Append(ch);
                 }
             }
         }
@@ -292,19 +294,6 @@ public static class JsonFormatter
         return false;
     }
 
-    //public static bool IsValidQuotes(string input)
-    //{
-    //    int quoteCount = 0;
-    //    foreach (char c in input)
-    //    {
-    //        if (c == '"')
-    //        {
-    //            quoteCount++;
-    //        }
-    //    }
-    //    return quoteCount % 2 == 0;
-    //}
-
     public static bool IsValidNumber(string input)
     {
         var signs = new List<char> { '+', '-' };
@@ -315,14 +304,8 @@ public static class JsonFormatter
             bool hasSign = signs.Contains(x[0]);
             return hasSign ? x[1..] : x;
         };
-        Func<string, bool> validWithSign = (string x) =>
-        {
-            return validOnlyDigits(strWithoutSign(x));
-        };
-        Func<string, bool> validWithNegOnly = (string x) =>
-        {
-            return x.Length > 0 && validOnlyDigits(x[0] == '-' ? x[1..] : x);
-        };
+        Func<string, bool> validWithSign = (string x) => validOnlyDigits(strWithoutSign(x));
+        Func<string, bool> validWithNegOnly = (string x) => x.Length > 0 && validOnlyDigits(x[0] == '-' ? x[1..] : x);
 
         var split_exponent = input.ToLower().Split('e');
         if (split_exponent.Length > 2) { return false; } // multiple exponents
@@ -468,12 +451,19 @@ public static class JsonFormatter
     /// Format file in place
     /// </summary>
     /// <param name="path">Relative path of the .json file</param>
-    public static void FormatByFilepath(string path)
+    public static void FormatByFilepath(string path, bool overrwrite = false)
     {
         StreamReader sr = new(path);
         string text = sr.ReadToEnd();
         string formatted = FormatJsonString(text);
         sr.Close();
-        File.WriteAllText(path, formatted);
+        if (overrwrite)
+        {
+            File.WriteAllText(path, formatted);
+        }
+        else
+        {
+            File.WriteAllText(path, formatted);
+        }
     }
 }

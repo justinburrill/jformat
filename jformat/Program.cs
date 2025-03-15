@@ -1,4 +1,23 @@
-﻿using JFormat;
+﻿using jformat;
+using jformat.extensions;
+
+FormatConfig config = new();
+
+void HandleArgument(string arg)
+{
+    switch (arg.RemovedPrefix("-"))
+    {
+        case "n":
+            config.InPlace = false;
+            break;
+        case "c":
+            config.AllowTrailingCommas = true;
+            break;
+        default:
+            Console.WriteLine($"Unrecognized flag {arg}");
+            break;
+    }
+}
 
 string GetFileType(string filename)
 {
@@ -18,18 +37,22 @@ bool IsSupportedFileType(string filename)
     }
 }
 
-//Console.WriteLine(FormatJsonString("{}"));
 var filesToFormat = new List<string>();
-//string filepath = "";
 var cwd = Directory.GetCurrentDirectory();
 if (args.Length == 0)
 {
+    // TODO: make it print help here
     Console.WriteLine("No files provided.");
     return;
 }
 
-foreach (var arg in args)
+foreach (string arg in args)
 {
+    if (arg.StartsWith('-'))
+    {
+        HandleArgument(arg);
+        continue;
+    }
     switch (arg)
     {
         case "*":
@@ -48,11 +71,11 @@ foreach (var arg in args)
     }
 }
 
-foreach (var fp in filesToFormat)
+foreach (string fp in filesToFormat)
 {
     try
     {
-        JsonFormatter.FormatByFilepath(fp);
+        JsonFormatter.FormatByFilepath(fp, config.InPlace);
     }
     catch (FileNotFoundException e) { Console.WriteLine(e.Message); }
     catch (Exception e)
