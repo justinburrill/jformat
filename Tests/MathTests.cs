@@ -1,4 +1,4 @@
-﻿using JFormat;
+﻿using jformat.extensions;
 
 namespace Tests;
 
@@ -29,5 +29,14 @@ public class MathTests
             after += result;
         }
         Assert.Equal(expect, after);
+    }
+
+    [Fact]
+    public void PrefixAndSuffix()
+    {
+        Assert.Equal("test", "test.json".RemovedSuffix(".json"));
+        Assert.Equal("asdftest", "asdfasdftest".RemovedPrefix("asdf"));
+        Assert.Equal("", "123".RemovedPrefix("123"));
+        Assert.Equal("", "123".RemovedSuffix("123"));
     }
 }

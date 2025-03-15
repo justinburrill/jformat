@@ -1,4 +1,4 @@
-using static JFormat.JsonFormatter;
+using static jformat.JsonFormatter;
 namespace Tests;
 
 public class TextTests

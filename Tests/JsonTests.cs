@@ -1,6 +1,6 @@
-﻿using JFormat;
+﻿using jformat;
 
-using static JFormat.JsonFormatter;
+using static jformat.JsonFormatter;
 
 namespace Tests;
 
