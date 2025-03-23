@@ -7,10 +7,15 @@ namespace jformat;
 
 public static class JsonFormatter
 {
+    /// <summary>
+    /// Check if input string is valid json
+    /// </summary>
+    /// <param name="input">JSON with root as an object or an array</param>
+    /// <returns>True if valid, false if invalid</returns>
     public static bool IsValidJson(string input)
     {
         input = RemoveWhitespace(input);
-        return IsValidJsonObj(input) || IsValidArray(input);
+        return IsValidObject(input) || IsValidArray(input);
     }
 
     private enum TokenType
@@ -42,34 +47,57 @@ public static class JsonFormatter
         return outstr.ToString();
     }
 
+    /// <summary>
+    /// Note: assumes valid json is passed in.
+    /// Will split the input into strings where each represents a "token"
+    /// </summary>
+    /// <param name="input">Valid JSON string</param>
+    /// <returns>List of <c>string</c> tokens</returns>
     public static List<string> TokenizeJsonObj(string input)
     {
         input = RemoveWhitespace(input);
         List<string> strings = [];
         StringBuilder temptoken = new();
-        TokenType? next = TokenType.Key;
+        TokenType? next = TokenType.OpenBracket; // next doesn't always have meaning and cannot be relied on
         int arrays_deep = 0;
+        int objs_deep = 0;
+        char last = input[0];
+        bool in_string = false;
 
         foreach (char ch in input)
         {
-            bool matched = false;
+            bool close_token_this_iteration = false;
             switch (ch)
             {
+                case '"':
+                    if (!in_string) { in_string = true; }
+                    if (in_string && last != '\\') { in_string = false; close_token_this_iteration = true; }
+                    break;
                 case ',':
-                    if (arrays_deep == 0) // ?
+                    if (in_string)
                     {
-
-                        next = TokenType.Key;
+                        // we're in a string, ignore delimiting comma
+                        break;
                     }
-                    matched = true;
+                    if (arrays_deep == 0)
+                    {
+                        next = TokenType.Key;
+                        close_token_this_iteration = true;
+                    }
                     break;
                 case ':':
-                    next = TokenType.Value; // ?
-                    matched = true;
+                    next = TokenType.Value;
+                    close_token_this_iteration = true;
                     break;
-                case '{' or '}': // TODO: does it break if a closing bracket is first?
-                    matched = true;
+                case '{':
+                    objs_deep++;
+                    close_token_this_iteration = true;
                     next = TokenType.Key;
+                    break;
+                case '}':
+                    objs_deep--;
+                    close_token_this_iteration = true;
+                    next = TokenType.Comma;
                     break;
                 case '[':
                     arrays_deep++;
@@ -85,13 +113,15 @@ public static class JsonFormatter
                         temptoken.Clear();
                     }
                     break;
+                default:
+                    break;
             }
             if (arrays_deep > 0)
             {
                 temptoken.Append(ch);
                 continue;
             }
-            if (matched)
+            if (close_token_this_iteration)
             {
                 if (temptoken.Length > 0)
                 {
@@ -106,7 +136,17 @@ public static class JsonFormatter
                 {
                     temptoken.Append(ch);
                 }
+                else
+                {
+                    throw new NotImplementedException($"was this supposed to happen? ch:{ch} temptoken:{temptoken} next:{next}");
+                }
             }
+            last = ch;
+        }
+
+        if (objs_deep != 0 || arrays_deep != 0)
+        {
+            throw new ArgumentException("Tokenizer was passed seemingly invalid json");
         }
 
         return strings;
@@ -126,9 +166,15 @@ public static class JsonFormatter
         };
     }
 
-    public static bool IsValidJsonObj(string input)
+    /// <summary>
+    /// Check if the input is a valid JSON object, i.e. not an array or value
+    /// </summary>
+    /// <param name="input">String representing a JSON object, inside { curly braces }</param>
+    /// <returns>True if valid, false if invalid</returns>
+    public static bool IsValidObject(string input)
     {
-        if (input[0] != '{' || input.Last() != '}')
+        input = RemoveWhitespace(input);
+        if (input[0] != '{' || input[^1] != '}')
         {
             return false;
         }
@@ -151,10 +197,10 @@ public static class JsonFormatter
             }
             validNextTypes = type switch
             {
-                TokenType.OpenBracket => [TokenType.Key, TokenType.ClosingBracket],
+                TokenType.OpenBracket => [TokenType.ClosingBracket, TokenType.Key],
                 TokenType.ClosingBracket => [TokenType.Comma, TokenType.ClosingBracket],
                 TokenType.Key => [TokenType.Colon],
-                TokenType.Colon => [TokenType.Value, TokenType.OpenBracket],
+                TokenType.Colon => [TokenType.OpenBracket, TokenType.Value],
                 TokenType.Value => [TokenType.Comma, TokenType.ClosingBracket],
                 TokenType.Comma => [TokenType.Key],
                 _ => throw new NotImplementedException(),
@@ -163,7 +209,7 @@ public static class JsonFormatter
         return bracketsDeep == 0;
     }
 
-    public static bool IsValidBrackets(string input)
+    public static bool HasValidBrackets(string input)
     {
         Dictionary<char, char> charPairTypes = new()
         {
@@ -195,7 +241,7 @@ public static class JsonFormatter
             ? false
             : new List<string> { "true", "false", "null" }.Contains(input)
             ? true
-            : IsValidString(input) ? true : IsValidNumber(input) ? true : IsValidArray(input) ? true : IsValidJsonObj(input);
+            : IsValidString(input) ? true : IsValidNumber(input) ? true : IsValidArray(input) ? true : IsValidObject(input);
     }
 
     public static bool IsValidString(string input)
@@ -269,7 +315,6 @@ public static class JsonFormatter
     /// Pass in a character to see if it is "escapable"
     /// </summary>
     /// <param name="ch"></param>
-    /// <returns></returns>
     public static bool IsValidEscape(char ch)
     {
         var options = new List<char> { '/', '\\', 'b', 'f', 'n', 'r', 't', '"' };
@@ -294,6 +339,14 @@ public static class JsonFormatter
         return false;
     }
 
+    /// <summary>
+    /// Check if the input string represents a valid decimal number in JSON, e.g.:
+    /// 7 is valid;
+    /// -85.3 is valid;
+    /// 1.23e5 is valid;
+    /// -13232.1231E4321 is valid.
+    /// </summary>
+    /// <param name="input">String representing a number, without any whitespace</param>
     public static bool IsValidNumber(string input)
     {
         var signs = new List<char> { '+', '-' };
@@ -389,15 +442,19 @@ public static class JsonFormatter
 
     public static string FormatJsonString(string input)
     {
-        if (!IsValidJsonObj(input)) { throw new ArgumentException($"Invalid JSON provided to FormatJsonString: {input}"); }
+        if (!IsValidObject(input)) { throw new ArgumentException($"Invalid JSON provided to FormatJsonString: {input}"); }
         var no_whitespace = RemoveWhitespace(input);
         int tab_depth = 0;
         var str = new StringBuilder();
+        var get_tabs = () => new string('\t', tab_depth);
 
         for (int i = 0; i < no_whitespace.Length; i++)
         {
             char c = no_whitespace[i];
-            str.Append(new string('\t', tab_depth)); // add tabs
+            if (str.Length > 0 && str.ToString()[^1] == '\n')
+            {
+                str.Append(get_tabs()); // add tabs
+            }
             switch (c)
             {
                 case ',':
@@ -408,16 +465,17 @@ public static class JsonFormatter
                     str.Append(c);
                     str.Append(' ');
                     break;
-                case '{':
+                case '{' or '[':
                     tab_depth += 1;
                     str.Append(c);
                     str.Append(Environment.NewLine);
                     break;
-                case '}':
+                case '}' or ']':
                     tab_depth -= 1;
                     str.Append(Environment.NewLine);
+                    str.Append(get_tabs());
                     str.Append(c);
-                    str.Append(Environment.NewLine);
+                    //str.Append(Environment.NewLine);
                     break;
                 default:
                     str.Append(c);
@@ -451,19 +509,24 @@ public static class JsonFormatter
     /// Format file in place
     /// </summary>
     /// <param name="path">Relative path of the .json file</param>
-    public static void FormatByFilepath(string path, bool overrwrite = false)
+    public static void FormatByFilepath(string path, bool overrwrite = true)
     {
         StreamReader sr = new(path);
         string text = sr.ReadToEnd();
-        string formatted = FormatJsonString(text);
-        sr.Close();
-        if (overrwrite)
+        if (!overrwrite)
         {
+            path = path.RemovedSuffix(".json") + "-formatted.json";
+        }
+        try
+        {
+            string formatted = FormatJsonString(text);
+            sr.Close();
+            Console.WriteLine($"writing to path: {path}");
             File.WriteAllText(path, formatted);
         }
-        else
+        catch (ArgumentException)
         {
-            File.WriteAllText(path, formatted);
+            Console.WriteLine($"Couldn't format {path} invalid JSON");
         }
     }
 }

@@ -1,7 +1,9 @@
 {
   "profiles": {
     "jformat": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-n examples/test1.json examples/test2.json",
+      "hotReloadEnabled": true
     }
   }
 }
