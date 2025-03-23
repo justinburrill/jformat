@@ -55,13 +55,14 @@ foreach (string arg in args)
     }
     switch (arg)
     {
+        // TODO: have actual file globbing
         case "*":
             filesToFormat = (List<string>)filesToFormat.Concat(Directory.GetFiles(cwd));
             break;
         default:
             if (IsSupportedFileType(arg))
             {
-                filesToFormat.Append(Path.GetFullPath(arg));
+                filesToFormat.Add(Path.GetFullPath(arg));
             }
             else
             {
@@ -70,6 +71,8 @@ foreach (string arg in args)
             break;
     }
 }
+
+Console.WriteLine($"Formatting {filesToFormat.Count} files...");
 
 foreach (string fp in filesToFormat)
 {

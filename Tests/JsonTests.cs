@@ -7,6 +7,13 @@ namespace Tests;
 public class JsonTests
 {
     [Fact]
+    public void ValidJsonDuplicateKey()
+    {
+        var json = "{\"keyA\":null,\"keyA\":null}";
+        Assert.False(IsValidJson(json)); // can't have two of the same key
+    }
+
+    [Fact]
     public void ValidArrayBasics()
     {
         Assert.True(IsValidArray("[]"));
@@ -48,6 +55,18 @@ public class JsonTests
 }";
         List<string> tokens2 = ["{", @"""this is my key""", ":", @"""my value""", ",", @"""this is another key""", ":", "false", "}"];
         Assert.Equal(tokens2, TokenizeJsonObj(json2));
+
+        string json3 = @"{""k{ey}[[key]][\"""": ""v{a[l[[u1}}}e""}";
+        List<string> tokens3 = ["{", "\"k{ey}[[key]][\\\"", ":", "\"v{a[l[[u1}}}e\"", "}"];
+        Assert.Equal(tokens3, TokenizeJsonObj(json3));
+        string json4 = "[1,2,3]";
+        List<string> tokens4 = ["[", "1", ",", "2", ",", "3", "]"];
+        Assert.Equal(tokens4, TokenizeJsonObj(json4));
+    }
+
+    [Fact]
+    public void TokenizeObjects2()
+    {
         string json3 = @"
 {
 	""key1"": false,
@@ -57,11 +76,6 @@ public class JsonTests
 ";
         List<string> tokens3 = ["{", "\"key1\"", ":", "false", ",", "\"key2\"", ":", "\"test\"", ",", "\"key3\"", ":", "123", "}"];
         Assert.Equal(tokens3, TokenizeJsonObj(json3));
-    }
-
-    [Fact]
-    public void TokenizeObjects2()
-    {
         string json = @"
 
   {
@@ -90,6 +104,14 @@ public class JsonTests
 }
 ";
         List<string> tokens = ["{", "\"myobj\"", ":", "{", "\"key1\"", ":", "false", ",", "\"key2\"", ":", "\"hey\"", "}", ",", "\"after\"", ":", "true", "}"];
+        Assert.Equal(tokens, TokenizeJsonObj(json));
+    }
+
+    [Fact]
+    public void TokenizeObjectWithBS()
+    {
+        string json = @"{""key with , commas"":""value,,, with commas""}";
+        List<string> tokens = ["{", "\"key with , commas\"", ":", "\"value,,, with commas\"", "}"];
         Assert.Equal(tokens, TokenizeJsonObj(json));
     }
 
@@ -130,19 +152,19 @@ public class JsonTests
     public void InvalidJsonObjsBasics()
     {
         string a = @"""hey"":{}";
-        Assert.False(IsValidJsonObj(a));
+        Assert.False(IsValidObject(a));
         // trailing comma not allowed :(
         string c = @"{""key"": ""value"",}";
-        Assert.False(IsValidJsonObj(c));
+        Assert.False(IsValidObject(c));
         // value not in quotes
         string A = @"{""key"": value}";
-        Assert.False(IsValidJsonObj(A));
+        Assert.False(IsValidObject(A));
         // no colon
         string B = @"{""key"" ""value""}";
-        Assert.False(IsValidJsonObj(B));
+        Assert.False(IsValidObject(B));
         // broken brackets 
         string C = @"""key"" ""value""}";
-        Assert.False(IsValidJsonObj(C));
+        Assert.False(IsValidObject(C));
     }
 
     [Fact]
@@ -156,7 +178,7 @@ public class JsonTests
         ""key4"": 4
     }
 }";
-        Assert.True(IsValidJsonObj(A));
+        Assert.True(IsValidObject(A));
 
         string B = @"{
     ""test"": {
@@ -165,7 +187,7 @@ public class JsonTests
         ""key3"": 3,
         ""key4"": 4
 }";
-        Assert.False(IsValidJsonObj(B)); // missing }
+        Assert.False(IsValidObject(B)); // missing }
     }
 
     [Fact]

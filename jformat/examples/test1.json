@@ -1,0 +1,8 @@
+{"employees":[
+{"name":"John Doe","age":30,"department":"Sales"},
+{"name":"Jane Smith","age":25,"department":"Marketing"},{"name":"Emily Johnson","age":35,"department":"HR"},
+{"name":"Michael Brown","age":40,"department":"IT"}],
+"company":"Tech Solutions",
+"location": "New York",
+"founded": 2010,
+"active": true}

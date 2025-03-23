@@ -71,40 +71,40 @@ public class TextTests
         string b = "()";
         string b2 = "<>";
         string b3 = "[";
-        Assert.True(IsValidBrackets(b));
-        Assert.True(IsValidBrackets(b2));
-        Assert.False(IsValidBrackets(b3));
+        Assert.True(HasValidBrackets(b));
+        Assert.True(HasValidBrackets(b2));
+        Assert.False(HasValidBrackets(b3));
     }
 
     [Fact]
     public void ValidBrackets2()
     {
         string b = "({ ]})";
-        Assert.False(IsValidBrackets(b));
+        Assert.False(HasValidBrackets(b));
         string b2 = "([{ [}])]";
-        Assert.False(IsValidBrackets(b2));
+        Assert.False(HasValidBrackets(b2));
     }
 
     [Fact]
     public void ValidBrackets3()
     {
         string b = "({ [{ [((([[{<>}]])))]}]})";
-        Assert.True(IsValidBrackets(b));
+        Assert.True(HasValidBrackets(b));
         string b2 = "({ [{ [((([[{>}]])))]}]})";
-        Assert.False(IsValidBrackets(b2));
+        Assert.False(HasValidBrackets(b2));
         string b3 = "({ [{ [((([[{<}]])))]}]})";
-        Assert.False(IsValidBrackets(b3));
+        Assert.False(HasValidBrackets(b3));
     }
 
     [Fact]
     public void ValidBrackets4()
     {
         string b = "()[][][][]{ }{()()<>}";
-        Assert.True(IsValidBrackets(b));
+        Assert.True(HasValidBrackets(b));
         string b2 = "[[{ (})]]";
-        Assert.False(IsValidBrackets(b2));
+        Assert.False(HasValidBrackets(b2));
         string b3 = "([{ }][]())<(><)>";
-        Assert.False(IsValidBrackets(b3));
+        Assert.False(HasValidBrackets(b3));
     }
 
     [Fact]

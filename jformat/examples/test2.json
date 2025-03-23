@@ -1,0 +1,35 @@
+{
+"store": {
+"book": [
+{
+"title": "The Great Gatsby", "author": "F. Scott Fitzgerald", "price": 10.99, "published": 1925
+},
+{
+"title": "To Kill a Mockingbird", "author": "Harper Lee", "price": 7.99, "published": 1960
+},
+{
+"title": "1984", "author": "George Orwell", "price": 8.99, "published": 1949
+}
+],
+"bicycle": {
+"color": "red", "price": 19.95
+}
+},
+"customer": {
+"name": "Alice", "age": 30, "purchases": [
+{
+"item": "The Great Gatsby", "quantity": 1
+},
+{
+"item": "1984", "quantity": 2
+}
+]
+},
+"storeHours": {
+"monday": "9am - 5pm", "tuesday": "9am - 5pm", "wednesday": "9am - 5pm", "thursday": "9am - 5pm", "friday": "9am - 5pm", "saturday": "10am - 4pm", "sunday": "Closed"
+},
+"location": "123 Book St, Fictionland",
+"established": 2001,
+"active": true
+}
+
