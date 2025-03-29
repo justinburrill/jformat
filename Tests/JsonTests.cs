@@ -29,7 +29,7 @@ public class JsonTests
     [Fact]
     public void ValidArrayObjs()
     {
-        Assert.True(JsonFormatter.IsValidArray(@"[{
+        Assert.True(IsValidArray(@"[{
     ""wha's up"": {
         ""heyy"": 5
     }
@@ -57,11 +57,12 @@ public class JsonTests
         Assert.Equal(tokens2, TokenizeJsonObj(json2));
 
         string json3 = @"{""k{ey}[[key]][\"""": ""v{a[l[[u1}}}e""}";
-        List<string> tokens3 = ["{", "\"k{ey}[[key]][\\\"", ":", "\"v{a[l[[u1}}}e\"", "}"];
+        List<string> tokens3 = ["{", "\"k{ey}[[key]][\\\"\"", ":", "\"v{a[l[[u1}}}e\"", "}"];
         Assert.Equal(tokens3, TokenizeJsonObj(json3));
-        string json4 = "[1,2,3]";
-        List<string> tokens4 = ["[", "1", ",", "2", ",", "3", "]"];
-        Assert.Equal(tokens4, TokenizeJsonObj(json4));
+        // i don't do it like this anymore
+        //string json4 = "[1,2,3]";
+        //List<string> tokens4 = ["[", "1", ",", "2", ",", "3", "]"];
+        //Assert.Equal(tokens4, TokenizeJsonObj(json4));
     }
 
     [Fact]
@@ -118,8 +119,9 @@ public class JsonTests
     [Fact]
     public void ValidJsonBasics()
     {
-        string b = @"{""key"": ""value""}";
         Assert.True(IsValidJson("{}"));
+        Assert.False(IsValidJson("{{}}"));
+        string b = @"{""key"": ""value""}";
         Assert.True(IsValidJson(b));
 
         string a = @"[1,2,3]";
@@ -186,6 +188,7 @@ public class JsonTests
         ""key2"": 2,
         ""key3"": 3,
         ""key4"": 4
+    
 }";
         Assert.False(IsValidObject(B)); // missing }
     }

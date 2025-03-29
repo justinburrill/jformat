@@ -1,4 +1,5 @@
 ﻿
+using System.Data;
 using System.Text;
 
 using jformat.extensions;
@@ -53,6 +54,7 @@ public static class JsonFormatter
     /// </summary>
     /// <param name="input">Valid JSON string</param>
     /// <returns>List of <c>string</c> tokens</returns>
+    /// <exception cref="ArgumentException">Thrown when there are uneven brackets or duplicate keys in the provided json</exception>
     public static List<string> TokenizeJsonObj(string input)
     {
         input = RemoveWhitespace(input);
@@ -63,65 +65,79 @@ public static class JsonFormatter
         int objs_deep = 0;
         char last = input[0];
         bool in_string = false;
+        Dictionary<int, List<string>> object_keys = [];
 
         foreach (char ch in input)
         {
-            bool close_token_this_iteration = false;
-            switch (ch)
+            bool end_token_due_to_close_bracket = false;
+            bool end_token_and_keep_char = false;
+            if (ch == '"')
             {
-                case '"':
-                    if (!in_string) { in_string = true; }
-                    if (in_string && last != '\\') { in_string = false; close_token_this_iteration = true; }
-                    break;
-                case ',':
-                    if (in_string)
-                    {
-                        // we're in a string, ignore delimiting comma
+                if (in_string && last != '\\')
+                {
+                    in_string = false;
+                    end_token_and_keep_char = true;
+                }
+                else if (!in_string)
+                {
+                    in_string = true;
+                }
+            }
+
+            if (!in_string)
+            {
+                switch (ch)
+                {
+                    case ',':
+                        if (arrays_deep == 0)
+                        {
+                            next = TokenType.Key;
+                            end_token_due_to_close_bracket = true;
+                        }
                         break;
-                    }
-                    if (arrays_deep == 0)
-                    {
+                    case ':':
+                        next = TokenType.Value;
+                        end_token_due_to_close_bracket = true;
+                        break;
+                    case '{':
+                        objs_deep++;
+                        if (!object_keys.ContainsKey(objs_deep))
+                        {
+                            // make sure list exists
+                            object_keys[objs_deep] = [];
+                        }
+                        end_token_due_to_close_bracket = true;
                         next = TokenType.Key;
-                        close_token_this_iteration = true;
-                    }
-                    break;
-                case ':':
-                    next = TokenType.Value;
-                    close_token_this_iteration = true;
-                    break;
-                case '{':
-                    objs_deep++;
-                    close_token_this_iteration = true;
-                    next = TokenType.Key;
-                    break;
-                case '}':
-                    objs_deep--;
-                    close_token_this_iteration = true;
-                    next = TokenType.Comma;
-                    break;
-                case '[':
-                    arrays_deep++;
-                    next = TokenType.Value;
-                    break;
-                case ']':
-                    arrays_deep--;
-                    next = TokenType.ClosingBracket;
-                    if (arrays_deep == 0)
-                    {
-                        temptoken.Append(ch);
-                        strings.Add(temptoken.ToString());
-                        temptoken.Clear();
-                    }
-                    break;
-                default:
-                    break;
+                        break;
+                    case '}':
+                        objs_deep--;
+                        end_token_due_to_close_bracket = true;
+                        next = TokenType.Comma;
+                        break;
+                    case '[':
+                        arrays_deep++;
+                        next = TokenType.Value;
+                        break;
+                    case ']':
+                        arrays_deep--;
+                        next = TokenType.ClosingBracket;
+                        if (arrays_deep == 0)
+                        {
+                            temptoken.Append(ch);
+                            strings.Add(temptoken.ToString());
+                            temptoken.Clear();
+                        }
+                        break;
+                    default:
+                        break;
+                }
             }
             if (arrays_deep > 0)
             {
                 temptoken.Append(ch);
                 continue;
             }
-            if (close_token_this_iteration)
+            if (end_token_due_to_close_bracket)
             {
                 if (temptoken.Length > 0)
                 {
@@ -130,23 +146,34 @@ public static class JsonFormatter
                 }
                 strings.Add(ch.ToString());
             }
-            else
+            else if (end_token_and_keep_char)
             {
-                if (next is TokenType.Key or TokenType.Value)
+                temptoken.Append(ch);
+                strings.Add(temptoken.ToString());
+                if (next is TokenType.Key) // add key to list for duplicate checking
                 {
-                    temptoken.Append(ch);
+                    object_keys[objs_deep].Add(temptoken.ToString());
                 }
-                else
-                {
-                    throw new NotImplementedException($"was this supposed to happen? ch:{ch} temptoken:{temptoken} next:{next}");
-                }
+                temptoken.Clear();
             }
+            else if (next is TokenType.Key or TokenType.Value)
+            {
+                temptoken.Append(ch);
+            }
+
             last = ch;
         }
 
         if (objs_deep != 0 || arrays_deep != 0)
         {
-            throw new ArgumentException("Tokenizer was passed seemingly invalid json");
+            throw new ArgumentException("Tokenizer was passed invalid json with unmatched brackets");
+        }
+        foreach (List<string> keys in object_keys.Values)
+        {
+            if (keys.Count != keys.Distinct().Count())
+            {
+                throw new ArgumentException("Duplicate keys in provided json");
+            }
         }
 
         return strings;
@@ -179,7 +206,15 @@ public static class JsonFormatter
             return false;
         }
 
-        var tokens = TokenizeJsonObj(input);
+        var tokens = new List<string>();
+        try
+        {
+            tokens = TokenizeJsonObj(input);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
         int bracketsDeep = 0;
         List<TokenType> validNextTypes = [TokenType.OpenBracket, TokenType.Key];
         foreach (string token in tokens)
