@@ -66,6 +66,14 @@ public class JsonTests
     }
 
     [Fact]
+    public void TokenizeObjectWithNestedArrayWithNestedQuotes()
+    {
+        string json = "{\"key1\":[\"\"\"],\"key2\":null}";
+        List<string> tokens = ["{", "\"key1\"", ":", "[\"\"\"]", ",", "\"key2\"", ":", "null", "}"];
+        Assert.Equal(tokens, TokenizeJsonObj(json));
+    }
+
+    [Fact]
     public void TokenizeObjects2()
     {
         string json3 = @"

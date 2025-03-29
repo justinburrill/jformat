@@ -69,9 +69,9 @@ public static class JsonFormatter
 
         foreach (char ch in input)
         {
-            bool end_token_due_to_close_bracket = false;
+            bool end_token_and_end_new_token = false;
             bool end_token_and_keep_char = false;
-            if (ch == '"')
+            if (ch == '"' && arrays_deep == 0)
             {
                 if (in_string && last != '\\')
                 {
@@ -92,12 +92,12 @@ public static class JsonFormatter
                         if (arrays_deep == 0)
                         {
                             next = TokenType.Key;
-                            end_token_due_to_close_bracket = true;
+                            end_token_and_end_new_token = true;
                         }
                         break;
                     case ':':
                         next = TokenType.Value;
-                        end_token_due_to_close_bracket = true;
+                        end_token_and_end_new_token = true;
                         break;
                     case '{':
                         objs_deep++;
@@ -106,12 +106,12 @@ public static class JsonFormatter
                             // make sure list exists
                             object_keys[objs_deep] = [];
                         }
-                        end_token_due_to_close_bracket = true;
+                        end_token_and_end_new_token = true;
                         next = TokenType.Key;
                         break;
                     case '}':
                         objs_deep--;
-                        end_token_due_to_close_bracket = true;
+                        end_token_and_end_new_token = true;
                         next = TokenType.Comma;
                         break;
                     case '[':
@@ -137,7 +137,7 @@ public static class JsonFormatter
                 temptoken.Append(ch);
                 continue;
             }
-            if (end_token_due_to_close_bracket)
+            if (end_token_and_end_new_token)
             {
                 if (temptoken.Length > 0)
                 {
