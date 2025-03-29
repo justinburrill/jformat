@@ -163,11 +163,12 @@ public static class JsonFormatter
 
             last = ch;
         }
-
+        // check for unclosed brackets
         if (objs_deep != 0 || arrays_deep != 0)
         {
             throw new ArgumentException("Tokenizer was passed invalid json with unmatched brackets");
         }
+        // check for duplicate keys
         foreach (List<string> keys in object_keys.Values)
         {
             if (keys.Count != keys.Distinct().Count())
@@ -270,14 +271,12 @@ public static class JsonFormatter
         return currently_open_pairs.Count == 0;
     }
 
-    public static bool IsValidValue(string input)
-    {
-        return input.Length == 0
-            ? false
-            : new List<string> { "true", "false", "null" }.Contains(input)
-            ? true
-            : IsValidString(input) ? true : IsValidNumber(input) ? true : IsValidArray(input) ? true : IsValidObject(input);
-    }
+    /// <summary>
+    /// Check if the input represents any valid JSON value, be it a string, number, array, object, or true/false/null.
+    /// </summary>
+    /// <param name="input">String representing JSON value. If it is supposed to be a JSON string, it should be surrounded in quotes.</param>
+    /// <returns>True if valid, false if invalid</returns>
+    public static bool IsValidValue(string input) => input.Length != 0 && (new List<string> { "true", "false", "null" }.Contains(input) || IsValidString(input) || IsValidNumber(input) || IsValidArray(input) || IsValidObject(input));
 
     public static bool IsValidString(string input)
     {
@@ -410,11 +409,12 @@ public static class JsonFormatter
             : throw new Exception("this wasn't supposed to happen"));
     }
 
-    public static List<string> TokenizeArray(string input)
+    public static List<string> ExtractArrayElements(string input)
     {
         input = RemoveWhitespace(input);
         List<string> items = [];
         int openBracketCount = 0;
+        int commaCount = 0;
         List<char> openBrackets = ['{', '[', '('];
         List<char> closeBrackets = ['}', ']', ')'];
         StringBuilder temp = new();
@@ -435,6 +435,7 @@ public static class JsonFormatter
             {
                 if (ch == ',')
                 {
+                    commaCount++;
                     items.Add(temp.ToString());
                     temp.Clear();
                 }
@@ -448,9 +449,18 @@ public static class JsonFormatter
                 temp.Append(ch);
             }
         }
-        if (items.Count > 0)
+        // ?????
+        //if (items.Count > 0)
+        //{
+        //    items.Add(temp.ToString());
+        //}
+        if (temp.Length > 0)
         {
             items.Add(temp.ToString());
+        }
+        if (items.Count > 0 && commaCount != items.Count - 1)
+        {
+            throw new ArgumentException("invalid commas in provided json array");
         }
         return items;
     }
@@ -463,7 +473,15 @@ public static class JsonFormatter
         {
             return false;
         }
-        List<string> tokens = TokenizeArray(input);
+        List<string> tokens;
+        try
+        {
+            tokens = ExtractArrayElements(input);
+        }
+        catch (ArgumentException)
+        {
+            return false;
+        }
 
         foreach (string item in tokens)
         {
