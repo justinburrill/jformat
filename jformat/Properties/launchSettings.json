@@ -4,6 +4,10 @@
       "commandName": "Project",
       "commandLineArgs": "-n examples/test1.json examples/test2.json",
       "hotReloadEnabled": true
+    },
+    "WSL": {
+      "commandName": "WSL2",
+      "distributionName": ""
     }
   }
 }
