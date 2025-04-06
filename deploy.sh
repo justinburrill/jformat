@@ -12,6 +12,7 @@ linux="-r linux-x64"
 
 
 ## remove old
+echo "Removing old builds..."
 rm -rf ./deploy
 mkdir deploy
 
@@ -28,9 +29,14 @@ cp "${p}/linux-x64/publish/jformat" ./deploy/jformat-linux-x64-sc
 
 ## ===== framework dependent executable and cross-platform binary (.dll) =====
 dotnet publish $proj $sf $notrim
-cp "${p}/linux-x64/publish/jformat" ./deploy/jformat-linux-x64-dep
 cp "${p}/win-x64/publish/jformat.exe" ./deploy/jformat-win-x64-dep.exe
+cp "${p}/linux-x64/publish/jformat" ./deploy/jformat-linux-x64-dep
 ## ======================
 
+
+## copy examples over
+cp "${p}/win-x64/publish/examples/"* ./deploy/
+
 ## lemme see em
+echo "Files in ./deploy:"
 ls -lah ./deploy
