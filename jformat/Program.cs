@@ -2,20 +2,38 @@
 using jformat.extensions;
 
 FormatConfig config = new();
+var supportedFileTypes = (string[])["json"];
 
-void HandleArgument(string arg)
+void PrintUsage()
 {
-    switch (arg.RemovedPrefix("-"))
+    Console.WriteLine("Usage:");
+    Console.WriteLine("jformat [options] [/path/to/input/files]");
+    Console.WriteLine("Options:");
+    Console.WriteLine(" -o\t[O]utput the formatted json to a seperate file. (By default, the formatted json is sent to stdout)");
+    Console.WriteLine(" -i\tFormat [i]n-place and overwrite the input file.");
+    //Console.WriteLine(" -c\t");
+}
+
+void HandleArgumentOption(string arg)
+{
+    if (arg.StartsWith("--")) { Console.WriteLine("No support for long argument names yet."); PrintUsage(); return; }
+    foreach (char ch in arg.RemovedPrefix("-"))
     {
-        case "n":
-            config.InPlace = false;
-            break;
-        case "c":
-            config.AllowTrailingCommas = true;
-            break;
-        default:
-            Console.WriteLine($"Unrecognized flag {arg}");
-            break;
+        switch (ch)
+        {
+            case 'o':
+                config.OutputToFile = true;
+                break;
+            case 'c':
+                config.AllowTrailingCommas = true;
+                break;
+            case 'i':
+                config.Overwrite = true;
+                break;
+            default:
+                Console.WriteLine($"Unrecognized flag {arg}.");
+                break;
+        }
     }
 }
 
@@ -29,7 +47,7 @@ bool IsSupportedFileType(string filename)
 {
     try
     {
-        return ((string[])["json"]).Contains(GetFileType(filename));
+        return supportedFileTypes.Contains(GetFileType(filename));
     }
     catch
     {
@@ -41,8 +59,8 @@ var filesToFormat = new List<string>();
 var cwd = Directory.GetCurrentDirectory();
 if (args.Length == 0)
 {
-    // TODO: make it print help here
     Console.WriteLine("No files provided.");
+    PrintUsage();
     return;
 }
 
@@ -50,7 +68,7 @@ foreach (string arg in args)
 {
     if (arg.StartsWith('-'))
     {
-        HandleArgument(arg);
+        HandleArgumentOption(arg);
         continue;
     }
     switch (arg)
@@ -74,11 +92,13 @@ foreach (string arg in args)
 
 Console.WriteLine($"Formatting {filesToFormat.Count} files...");
 
+// by default, the formatted output should be sent to stdout
+// providing the -o parameter should allow the user to specify a file name to output to.
 foreach (string fp in filesToFormat)
 {
     try
     {
-        JsonFormatter.FormatByFilepath(fp, config.InPlace);
+        JsonFormatter.FormatByFilepath(fp, config);
     }
     catch (FileNotFoundException e) { Console.WriteLine(e.Message); }
     catch (Exception e)

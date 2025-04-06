@@ -4,7 +4,7 @@ using static jformat.JsonFormatter;
 
 namespace Tests;
 
-public class JsonTests
+public class ValidJsonTests
 {
     [Fact]
     public void ValidJsonDuplicateKey()
@@ -17,6 +17,7 @@ public class JsonTests
     public void ValidArrayBasics()
     {
         Assert.True(IsValidArray("[]"));
+        Assert.False(IsValidArray("[\"one\" \"two\"]"));
         Assert.True(IsValidArray("[1, 2, 3]"));
         Assert.True(IsValidArray(@"[""what's up"", 2, ""another one""]"));
         Assert.True(IsValidArray("[true, false, null]"));
@@ -49,6 +50,7 @@ public class JsonTests
 ]
             "));
     }
+
     [Fact]
     public void ValidJsonBasics()
     {
@@ -75,12 +77,8 @@ public class JsonTests
     {
         string str3 = File.ReadAllText("./examples/test3.json");
         Assert.True(IsValidJson(str3));
-    }
-
-    [Fact]
-    public void ValidJsonFilesExternal()
-    {
-        string json = File.ReadAllText("./examples/navigation.json");
+        string str4 = File.ReadAllText("./examples/test4.json");
+        Assert.True(IsValidJson(str4));
     }
 
     [Fact]
@@ -100,6 +98,23 @@ public class JsonTests
         // broken brackets 
         string C = @"""key"" ""value""}";
         Assert.False(IsValidObject(C));
+    }
+
+    [Fact]
+    public void InvalidJsonTricky()
+    {
+        Assert.False(IsValidJson(""));
+        Assert.False(IsValidJson("{[}"));
+        Assert.False(IsValidJson("{}}"));
+        Assert.False(IsValidJson("{{}}"));
+        Assert.False(IsValidJson("[[{{}}]]"));
+        Assert.False(IsValidJson(@"{
+  123: ""This key is not a string"",
+  ""validKey"": ""This is valid""
+}"));
+        Assert.False(IsValidJson(@"{
+  ""title"": ""Invalid Example with a quote: ""This is unescaped"" and more text.""
+}"));
     }
 
     [Fact]
@@ -139,6 +154,7 @@ public class JsonTests
         Assert.True(IsValidValue(@"""str1"""));
         Assert.False(IsValidValue(@""));
     }
+
     [Fact]
     public void ValidArrays()
     {

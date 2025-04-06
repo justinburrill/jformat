@@ -201,6 +201,11 @@ public static class JsonFormatter
     /// <returns>True if valid, false if invalid</returns>
     public static bool IsValidObject(string input)
     {
+        if (input.Length == 0)
+        {
+            return false;
+        }
+
         input = RemoveWhitespace(input);
         if (input[0] != '{' || input[^1] != '}')
         {
@@ -449,11 +454,6 @@ public static class JsonFormatter
                 temp.Append(ch);
             }
         }
-        // ?????
-        //if (items.Count > 0)
-        //{
-        //    items.Add(temp.ToString());
-        //}
         if (temp.Length > 0)
         {
             items.Add(temp.ToString());
@@ -498,6 +498,8 @@ public static class JsonFormatter
         if (!IsValidObject(input)) { throw new ArgumentException($"Invalid JSON provided to FormatJsonString: {input}"); }
         var no_whitespace = RemoveWhitespace(input);
         int tab_depth = 0;
+        bool in_string = false;
+        char last = input[0];
         var str = new StringBuilder();
         var get_tabs = () => new string('\t', tab_depth);
 
@@ -510,30 +512,33 @@ public static class JsonFormatter
             }
             switch (c)
             {
+                // TODO: make it not append newlines if i'm in a string... make some tests for these maybe
+                case '"':
+                    if (!in_string) { in_string = true; }
+                    else if (in_string && last != '\\') { in_string = false; }
+                    str.Append(c);
+                    break;
                 case ',':
                     str.Append(c);
-                    str.Append(Environment.NewLine);
+                    if (!in_string) { str.Append(Environment.NewLine); }
                     break;
                 case ':':
                     str.Append(c);
-                    str.Append(' ');
+                    if (!in_string) { str.Append(' '); }
                     break;
                 case '{' or '[':
-                    tab_depth += 1;
                     str.Append(c);
-                    str.Append(Environment.NewLine);
+                    if (!in_string) { tab_depth += 1; str.Append(Environment.NewLine); }
                     break;
                 case '}' or ']':
-                    tab_depth -= 1;
-                    str.Append(Environment.NewLine);
-                    str.Append(get_tabs());
+                    if (!in_string) { tab_depth -= 1; str.Append(Environment.NewLine); str.Append(get_tabs()); }
                     str.Append(c);
-                    //str.Append(Environment.NewLine);
                     break;
                 default:
                     str.Append(c);
                     break;
             }
+            last = c;
         }
 
         return str.ToString();
@@ -562,20 +567,24 @@ public static class JsonFormatter
     /// Format file in place
     /// </summary>
     /// <param name="path">Relative path of the .json file</param>
-    public static void FormatByFilepath(string path, bool overrwrite = true)
+    public static void FormatByFilepath(string path, FormatConfig config)
     {
         StreamReader sr = new(path);
         string text = sr.ReadToEnd();
-        if (!overrwrite)
-        {
-            path = path.RemovedSuffix(".json") + "-formatted.json";
-        }
+        sr.Close();
         try
         {
             string formatted = FormatJsonString(text);
-            sr.Close();
-            Console.WriteLine($"writing to path: {path}");
-            File.WriteAllText(path, formatted);
+            if (config.OutputToFile)
+            {
+                string outpath = path.RemovedSuffix(".json") + "-formatted.json";
+                Console.WriteLine($"writing to path: {outpath}");
+                File.WriteAllText(outpath, formatted);
+            }
+            else
+            {
+                Console.Write(formatted + "\n"); // print result by default
+            }
         }
         catch (ArgumentException)
         {

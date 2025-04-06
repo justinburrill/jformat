@@ -1,0 +1,83 @@
+﻿{
+  "name": "Complex JSON Example",
+  "description": "This JSON contains various elements that could confuse a naive parser.",
+  "items": [
+    {
+      "id": 1,
+      "title": "Item 1",
+      "details": {
+        "description": "This is the first item. It includes a quote: \"To be or not to be\".",
+        "tags": [ "example", "test", "complexity" ],
+        "nested": {
+          "level1": {
+            "level2": {
+              "level3": "Deeply nested value with a quote: \"Nested quotes can be tricky!\""
+            }
+          }
+        }
+      },
+      "active": true
+    },
+    {
+      "id": 2,
+      "title": "Item 2",
+      "details": {
+        "description": "This item has a comma, a quote, and a backslash: \"This is a backslash: \\\\ and a comma, \",\".",
+        "tags": [ "json", "parser", "edge case" ],
+        "nested": {
+          "level1": {
+            "level2": {
+              "level3": "Another tricky value with a quote: \"Watch out for quotes!\""
+            }
+          }
+        }
+      },
+      "active": false
+    },
+    {
+      "id": 3,
+      "title": "Item 3",
+      "details": {
+        "description": "This item contains a newline character:\n\"New lines can also be problematic!\"",
+        "tags": [ "newline", "quote", "complex" ],
+        "nested": {
+          "level1": {
+            "level2": {
+              "level3": "Final nested value with a quote: \"Final thoughts on complexity!\""
+            }
+          }
+        }
+      },
+      "active": true
+    }
+  ],
+  "metadata": {
+    "created": "2023-10-01T12:00:00Z",
+    "updated": "2023-10-02T12:00:00Z",
+    "author": {
+      "name": "John Doe",
+      "email": "john.doe@example.com"
+    },
+    "comments": [
+      {
+        "user": "Alice",
+        "comment": "This is a comment with a quote: \"Interesting structure!\"",
+        "timestamp": "2023-10-01T13:00:00Z"
+      },
+      {
+        "user": "Bob",
+        "comment": "Another comment, with a comma: \"I like it, but...\"",
+        "timestamp": "2023-10-01T14:00:00Z"
+      }
+    ]
+  },
+  "arrayWithMixedTypes": [
+    "string",
+    42,
+    null,
+    true,
+    {
+      "key": "value with a quote: \"This could confuse parsers!\""
+    }
+  ]
+}
