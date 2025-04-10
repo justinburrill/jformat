@@ -7,10 +7,17 @@ namespace Tests;
 public class ValidJsonTests
 {
     [Fact]
-    public void ValidJsonDuplicateKey()
+    public void DuplicateKey()
     {
         var json = "{\"keyA\":null,\"keyA\":null}";
         Assert.False(IsValidJson(json)); // can't have two of the same key
+    }
+
+    [Fact]
+    public void NestedDuplicateKeys()
+    {
+        var json = "{\"keyA\":{\"keyA\":null}, \"KeyB\":{\"keyA\":null}}";
+        Assert.True(IsValidJson(json));
     }
 
     [Fact]

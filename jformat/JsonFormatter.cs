@@ -1,6 +1,4 @@
-﻿
-using System.Data;
-using System.Text;
+﻿using System.Text;
 
 using jformat.extensions;
 
@@ -18,6 +16,13 @@ public static class JsonFormatter
         input = RemoveWhitespace(input);
         return IsValidObject(input) || IsValidArray(input);
     }
+
+    /// <summary>
+    /// Check if the input represents any valid JSON value, be it a string, number, array, object, or true/false/null.
+    /// </summary>
+    /// <param name="input">String representing JSON value. If it is supposed to be a JSON string, it should be surrounded in quotes.</param>
+    /// <returns>True if valid, false if invalid</returns>
+    public static bool IsValidValue(string input) => input.Length != 0 && (new List<string> { "true", "false", "null" }.Contains(input) || IsValidString(input) || IsValidNumber(input) || IsValidArray(input) || IsValidObject(input));
 
     private enum TokenType
     {
@@ -60,7 +65,7 @@ public static class JsonFormatter
         input = RemoveWhitespace(input);
         List<string> strings = [];
         StringBuilder temptoken = new();
-        TokenType? next = TokenType.OpenBracket; // next doesn't always have meaning and cannot be relied on
+        TokenType? next = TokenType.OpenBracket; // note: next doesn't always have meaning and cannot be relied on
         int arrays_deep = 0;
         int objs_deep = 0;
         char last = input[0];
@@ -110,6 +115,12 @@ public static class JsonFormatter
                         next = TokenType.Key;
                         break;
                     case '}':
+                        object_keys.Remove(objs_deep, out List<string>? keys_for_that_level);
+                        // check for duplicate keys
+                        if (keys_for_that_level is not null && (keys_for_that_level.Count != keys_for_that_level.Distinct().Count()))
+                        {
+                            throw new ArgumentException("Duplicate keys in provided json");
+                        }
                         objs_deep--;
                         end_token_and_end_new_token = true;
                         next = TokenType.Comma;
@@ -164,20 +175,9 @@ public static class JsonFormatter
             last = ch;
         }
         // check for unclosed brackets
-        if (objs_deep != 0 || arrays_deep != 0)
-        {
-            throw new ArgumentException("Tokenizer was passed invalid json with unmatched brackets");
-        }
-        // check for duplicate keys
-        foreach (List<string> keys in object_keys.Values)
-        {
-            if (keys.Count != keys.Distinct().Count())
-            {
-                throw new ArgumentException("Duplicate keys in provided json");
-            }
-        }
-
-        return strings;
+        return objs_deep != 0 || arrays_deep != 0
+            ? throw new ArgumentException("Tokenizer was passed invalid json with unmatched brackets") // bad json!!
+            : strings; // success!
     }
 
     private static bool IsValidToken(string token, TokenType tokenType)
@@ -201,26 +201,15 @@ public static class JsonFormatter
     /// <returns>True if valid, false if invalid</returns>
     public static bool IsValidObject(string input)
     {
-        if (input.Length == 0)
-        {
-            return false;
-        }
+        if (input.Length == 0) { return false; }
 
         input = RemoveWhitespace(input);
-        if (input[0] != '{' || input[^1] != '}')
-        {
-            return false;
-        }
+        if (input[0] != '{' || input[^1] != '}') { return false; }
 
-        var tokens = new List<string>();
-        try
-        {
-            tokens = TokenizeJsonObj(input);
-        }
-        catch (ArgumentException)
-        {
-            return false;
-        }
+        List<string> tokens;
+        try { tokens = TokenizeJsonObj(input); }
+        catch (ArgumentException) { return false; }
+
         int bracketsDeep = 0;
         List<TokenType> validNextTypes = [TokenType.OpenBracket, TokenType.Key];
         foreach (string token in tokens)
@@ -275,13 +264,6 @@ public static class JsonFormatter
         }
         return currently_open_pairs.Count == 0;
     }
-
-    /// <summary>
-    /// Check if the input represents any valid JSON value, be it a string, number, array, object, or true/false/null.
-    /// </summary>
-    /// <param name="input">String representing JSON value. If it is supposed to be a JSON string, it should be surrounded in quotes.</param>
-    /// <returns>True if valid, false if invalid</returns>
-    public static bool IsValidValue(string input) => input.Length != 0 && (new List<string> { "true", "false", "null" }.Contains(input) || IsValidString(input) || IsValidNumber(input) || IsValidArray(input) || IsValidObject(input));
 
     public static bool IsValidString(string input)
     {
@@ -411,7 +393,7 @@ public static class JsonFormatter
             ? validWithNegOnly(split_decimal[0])
             : split_decimal.Length == 2
             ? validWithNegOnly(split_decimal[0]) && validOnlyDigits(split_decimal[1])
-            : throw new Exception("this wasn't supposed to happen"));
+            : throw new Exception("Error in parsing number."));
     }
 
     public static List<string> ExtractArrayElements(string input)
@@ -458,11 +440,9 @@ public static class JsonFormatter
         {
             items.Add(temp.ToString());
         }
-        if (items.Count > 0 && commaCount != items.Count - 1)
-        {
-            throw new ArgumentException("invalid commas in provided json array");
-        }
-        return items;
+        return items.Count > 0 && commaCount != items.Count - 1
+            ? throw new ArgumentException("invalid commas in provided json array")
+            : items;
     }
 
     public static bool IsValidArray(string input)
