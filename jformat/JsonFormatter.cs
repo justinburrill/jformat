@@ -552,6 +552,19 @@ public static class JsonFormatter
         StreamReader sr = new(path);
         string text = sr.ReadToEnd();
         sr.Close();
+        if (config.ValidateOnly)
+        {
+            var result = IsValidJson(text);
+            if (result)
+            {
+                Console.WriteLine("The provided JSON is valid.");
+            }
+            else
+            {
+                Console.WriteLine("The provided JSON is NOT valid.");
+            }
+            return;
+        }
         try
         {
             string formatted = FormatJsonString(text);

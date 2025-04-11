@@ -11,6 +11,7 @@ void PrintUsage()
     Console.WriteLine("Options:");
     Console.WriteLine(" -o\t[O]utput the formatted json to a seperate file. (By default, the formatted json is sent to stdout)");
     Console.WriteLine(" -i\tFormat [i]n-place and overwrite the input file.");
+    Console.WriteLine(" -v\t[V]alidate only, don't format the json.");
     Console.WriteLine(" -h\tPrint this message.");
     //Console.WriteLine(" -c\t");
 }
@@ -24,6 +25,9 @@ void HandleArgumentOption(string arg)
         {
             case '?' or 'h':
                 PrintUsage();
+                break;
+            case 'v':
+                config.ValidateOnly = true;
                 break;
             case 'o':
                 config.OutputToFile = true;
