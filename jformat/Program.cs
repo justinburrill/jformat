@@ -7,10 +7,11 @@ var supportedFileTypes = (string[])["json"];
 void PrintUsage()
 {
     Console.WriteLine("Usage:");
-    Console.WriteLine("jformat [options] [/path/to/input/files]");
+    Console.WriteLine("\tjformat [options] [/path/to/input/files]");
     Console.WriteLine("Options:");
     Console.WriteLine(" -o\t[O]utput the formatted json to a seperate file. (By default, the formatted json is sent to stdout)");
     Console.WriteLine(" -i\tFormat [i]n-place and overwrite the input file.");
+    Console.WriteLine(" -h\tPrint this message.");
     //Console.WriteLine(" -c\t");
 }
 
@@ -21,6 +22,9 @@ void HandleArgumentOption(string arg)
     {
         switch (ch)
         {
+            case '?' or 'h':
+                PrintUsage();
+                break;
             case 'o':
                 config.OutputToFile = true;
                 break;

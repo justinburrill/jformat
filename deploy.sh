@@ -1,6 +1,7 @@
 config="--tl:on -c release"
 sc="--self-contained=true"
 sf="$config -p:PublishSingleFile=true"
+nosc="--self-contained=false"
 trim="-p:PublishTrimmed=true"
 notrim="-p:PublishTrimmed=false"
 
@@ -28,8 +29,9 @@ cp "${p}/linux-x64/publish/jformat" ./deploy/jformat-linux-x64-sc
 ## ======================
 
 ## ===== framework dependent executable and cross-platform binary (.dll) =====
-dotnet publish $proj $sf $notrim
+dotnet publish $proj $sf $notrim $nosc
 cp "${p}/win-x64/publish/jformat.exe" ./deploy/jformat-win-x64-dep.exe
+dotnet publish $proj $sf $notrim $nosc --os linux
 cp "${p}/linux-x64/publish/jformat" ./deploy/jformat-linux-x64-dep
 ## ======================
 

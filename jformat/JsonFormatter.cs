@@ -371,15 +371,15 @@ public static class JsonFormatter
     public static bool IsValidNumber(string input)
     {
         var signs = new List<char> { '+', '-' };
-        Func<string, bool> validOnlyDigits = (string x) => x.All(char.IsDigit) && x.Length > 0;
-        Func<string, string> strWithoutSign = (string x) =>
+        bool validOnlyDigits(string x) => x.All(char.IsDigit) && x.Length > 0;
+        string strWithoutSign(string x)
         {
             if (x.Length == 0) { return x; }
             bool hasSign = signs.Contains(x[0]);
             return hasSign ? x[1..] : x;
-        };
-        Func<string, bool> validWithSign = (string x) => validOnlyDigits(strWithoutSign(x));
-        Func<string, bool> validWithNegOnly = (string x) => x.Length > 0 && validOnlyDigits(x[0] == '-' ? x[1..] : x);
+        }
+        bool validWithSign(string x) => validOnlyDigits(strWithoutSign(x));
+        bool validWithNegOnly(string x) => x.Length > 0 && validOnlyDigits(x[0] == '-' ? x[1..] : x);
 
         var split_exponent = input.ToLower().Split('e');
         if (split_exponent.Length > 2) { return false; } // multiple exponents
@@ -481,7 +481,7 @@ public static class JsonFormatter
         bool in_string = false;
         char last = input[0];
         var str = new StringBuilder();
-        var get_tabs = () => new string('\t', tab_depth);
+        string get_tabs() => new('\t', tab_depth);
 
         for (int i = 0; i < no_whitespace.Length; i++)
         {
@@ -555,10 +555,15 @@ public static class JsonFormatter
         try
         {
             string formatted = FormatJsonString(text);
-            if (config.OutputToFile)
+            if (config.Overwrite)
+            {
+                Console.WriteLine($"Writing to path: {path}");
+                File.WriteAllText(path, formatted);
+            }
+            else if (config.OutputToFile)
             {
                 string outpath = path.RemovedSuffix(".json") + "-formatted.json";
-                Console.WriteLine($"writing to path: {outpath}");
+                Console.WriteLine($"Writing to path: {outpath}");
                 File.WriteAllText(outpath, formatted);
             }
             else
