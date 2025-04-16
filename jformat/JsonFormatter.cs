@@ -71,14 +71,21 @@ public static class JsonFormatter
         char last = input[0];
         bool in_string = false;
         Dictionary<int, List<string>> object_keys = [];
+        bool escaping = false;
 
         foreach (char ch in input)
         {
+            bool this_char_is_escaped = escaping;
             bool end_token_and_end_new_token = false;
             bool end_token_and_keep_char = false;
+            if (in_string && ch == '\\')
+            {
+                escaping = !escaping; // this should be toggled, not set to false
+                // if we have a \\ then one is escaped and the next char afterwards is not
+            }
             if (ch == '"' && arrays_deep == 0)
             {
-                if (in_string && last != '\\')
+                if (in_string && !escaping)
                 {
                     in_string = false;
                     end_token_and_keep_char = true;
@@ -173,6 +180,7 @@ public static class JsonFormatter
             }
 
             last = ch;
+            if (this_char_is_escaped) { escaping = false; }
         }
         // check for unclosed brackets
         return objs_deep != 0 || arrays_deep != 0

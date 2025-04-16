@@ -165,9 +165,57 @@ public class ValidJsonTests
     [Fact]
     public void ValidArrays()
     {
-        Assert.True(JsonFormatter.IsValidArray(@"[]"));
-        Assert.True(JsonFormatter.IsValidArray(@"[1, 2, 3, 4, 5, 6]"));
-        Assert.True(JsonFormatter.IsValidArray(@"[[1,2], [1,2]]"));
-        Assert.True(JsonFormatter.IsValidArray(@"[{""key"": ""value""}, [1, 2, 3]]"));
+        Assert.True(IsValidArray(@"[]"));
+        Assert.True(IsValidArray(@"[1, 2, 3, 4, 5, 6]"));
+        Assert.True(IsValidArray(@"[[1,2], [1,2]]"));
+        Assert.True(IsValidArray(@"[{""key"": ""value""}, [1, 2, 3]]"));
+    }
+
+    [Fact]
+    public void ValidJsonStrings()
+    {
+        Assert.True(IsValidJson("{}"));
+        Assert.True(IsValidJson("{}"));
+        Assert.True(IsValidJson("{  }"));
+        Assert.True(IsValidJson(" { }"));
+        Assert.True(IsValidJson("{ \"a\" : \"b\" }"));
+        Assert.True(IsValidJson("{ \"a\" : null }"));
+        Assert.True(IsValidJson("{ \"a\" : true }   "));
+        Assert.True(IsValidJson("{ \"a\" : false }   "));
+        Assert.True(IsValidJson("{ \"a\" : { } }"));
+        Assert.True(IsValidJson("[]"));
+        Assert.True(IsValidJson("[ ]"));
+        Assert.True(IsValidJson(" [ ]"));
+        Assert.True(IsValidJson("[1]"));
+        Assert.True(IsValidJson("[true]"));
+        Assert.True(IsValidJson("[-42]"));
+        Assert.True(IsValidJson("[-42, true, false, null]"));
+        Assert.True(IsValidJson("{ \"integer\": 1234567890 }"));
+        Assert.True(IsValidJson("{ \"real\": -9876.543210 }"));
+        Assert.True(IsValidJson("{ \"e\": 0.123456789e-12 }"));
+        Assert.True(IsValidJson("{ \"E\": 1.234567890E+34 }"));
+        Assert.True(IsValidJson("{ \"\":  23456789012E66 }"));
+        Assert.True(IsValidJson("{ \"zero\": 0 }"));
+        Assert.True(IsValidJson("{ \"one\": 1 }"));
+        Assert.True(IsValidJson(@"{ ""space"": "" "" }"));
+        Assert.True(IsValidJson("{ \"quote\": \" \\\" \"}"));
+        Assert.True(IsValidJson("{ \"backslash\": \"\\\\\"}"));
+        Assert.True(IsValidJson("{ \"controls\": \"\b\f\n\r\t\"}"));
+        Assert.True(IsValidJson(@"{ ""slash"": ""/ & \/""}"));
+        Assert.True(IsValidJson("{ \"alpha\": \"abcdefghijklmnopqrstuvwyz\"}"));
+        Assert.True(IsValidJson("{ \"ALPHA\": \"ABCDEFGHIJKLMNOPQRSTUVWYZ\"}"));
+        Assert.True(IsValidJson("{ \"digit\": \"0123456789\"}"));
+        Assert.True(IsValidJson("{ \"0123456789\": \"digit\"}"));
+        Assert.True(IsValidJson("{\"special\": \"`1~!@ $%^&*()_+-={':[,]}|;.</>?\"}"));
+        Assert.True(IsValidJson("{\"hex\": \"\u0123\u4567\u89AB\uCDEF\uabcd\uef4A\"}"));
+        Assert.True(IsValidJson("{\"true\": true}"));
+        Assert.True(IsValidJson("{\"false\": false}"));
+        Assert.True(IsValidJson("{\"null\": null}"));
+        Assert.True(IsValidJson("{\"array\":[  ]}"));
+        Assert.True(IsValidJson("{\"object\":{  }}"));
+        Assert.True(IsValidJson("{\"address\": \"50 St. James Street\"}"));
+        Assert.True(IsValidJson("{\"url\": \"http://www.JSON.org/\"}"));
+        Assert.True(IsValidJson("{\"comment\": \"// /* <!-- --\"}"));
+        Assert.True(IsValidJson("{\" #  -- --> */\": \" \"}"));
     }
 }
