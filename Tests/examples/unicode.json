@@ -1,0 +1,9 @@
+{
+  "unicode": "Hello,世界 ēÜæȤɎͶഅೠઋஃ",
+  "emoji": "Hello, 😊",
+  "combining": "Café",
+  "escaped stuff": " \" \t \n ",
+  "rtl": "مرحبا",
+  "surrogate": "𐍈",
+  "non_bmp": "𝓗𝓮𝓵𝓵𝓸"
+}

@@ -6,11 +6,12 @@ public class TextTests
     [Fact]
     public void ValidNumberBasics()
     {
-        Assert.True(IsValidNumber("00"));
         Assert.True(IsValidNumber("1"));
         Assert.True(IsValidNumber("2.0"));
         Assert.True(IsValidNumber("3.10"));
-        Assert.True(IsValidNumber("04.1234"));
+        Assert.True(IsValidNumber("0.123"));
+        Assert.True(IsValidNumber("4.1234"));
+        Assert.True(IsValidNumber("123.321E123"));
 
         Assert.False(IsValidNumber(" "));
         Assert.False(IsValidNumber(""));      // empty str
@@ -18,6 +19,9 @@ public class TextTests
         Assert.False(IsValidNumber("1a")); // letters
         Assert.False(IsValidNumber("12a1.12e3")); // letters
         Assert.False(IsValidNumber("1ea3")); // letters
+        Assert.False(IsValidNumber("0123")); // no leading zeros
+        Assert.False(IsValidNumber("00"));
+        Assert.False(IsValidNumber("04.1234"));
     }
 
     [Fact]
@@ -128,6 +132,19 @@ public class TextTests
     }
 
     [Fact]
+    public void ValidStringsWithUnicode()
+    {
+        Assert.True(IsValidString("\"\u0123\u4567\u89AB\uCDEF\uabcd\uef4A\""));
+        Assert.True(IsValidString("\"\\u0123\\u4567\\u89AB\\uCDEF\\uabcd\\uef4A\""));
+    }
+
+    [Fact]
+    public void ValidUnicodeFile()
+    {
+        Assert.True(IsValidJson(File.ReadAllText("./examples/unicode.json")));
+    }
+
+    [Fact]
     public void ValidStringsWithEscapes()
     {
         // only valid escapes ", b, n, \, etc
@@ -157,21 +174,21 @@ public class TextTests
     [Fact]
     public void ValidStringsWithEscape()
     {
-        Assert.True(IsValidEscape('b'));
-        Assert.True(IsValidEscape('n'));
-        Assert.True(IsValidEscape('f'));
-        Assert.True(IsValidEscape('b'));
-        Assert.True(IsValidEscape('\\'));
-        Assert.True(IsValidEscape('/'));
+        Assert.True(IsValidEscapeChar('b'));
+        Assert.True(IsValidEscapeChar('n'));
+        Assert.True(IsValidEscapeChar('f'));
+        Assert.True(IsValidEscapeChar('b'));
+        Assert.True(IsValidEscapeChar('\\'));
+        Assert.True(IsValidEscapeChar('/'));
         Assert.True(IsValidEscape("ua3fe"));
         Assert.True(IsValidEscape("u0000"));
         Assert.True(IsValidEscape("u9999"));
         Assert.True(IsValidEscape("uffff"));
-        Assert.True(IsValidEscape('"'));
+        Assert.True(IsValidEscapeChar('"'));
 
-        Assert.False(IsValidEscape('a')); // not a escape sequence
-        Assert.False(IsValidEscape('m'));
-        Assert.False(IsValidEscape('1'));
+        Assert.False(IsValidEscapeChar('a')); // not a escape sequence
+        Assert.False(IsValidEscapeChar('m'));
+        Assert.False(IsValidEscapeChar('1'));
         Assert.False(IsValidEscape("u123")); // too short
         Assert.False(IsValidEscape("u1")); // too short
     }
@@ -191,8 +208,20 @@ b                   c";
         string s4 = @"[1, ""a b"", 3]";
         string s4_after = @"[1,""a b"",3]";
         Assert.Equal(s4_after, RemoveWhitespace(s4));
-        string s5 = @"[ 123, [ ""heyyy"", ""test words"" ]]";
-        string s5_after = @"[123,[""heyyy"",""test words""]]";
+        string s5 = @"[ 123, [ ""heyyy"", ""test \"" words""]]";
+        string s5_after = @"[123,[""heyyy"",""test \"" words""]]";
         Assert.Equal(s5_after, RemoveWhitespace(s5));
+    }
+
+    [Fact]
+    public void RemoveWhitespaceWithQuotes()
+    {
+        string before = "{\" \\\\  test  \\\"  \"    \r\n     :         null}";
+        string after = "{\" \\\\  test  \\\"  \":null}";
+        string result = RemoveWhitespace(before);
+        Assert.Equal(after, result);
+        Assert.True(IsValidJson(before));
+        Assert.True(IsValidJson(after));
+        Assert.True(IsValidJson(result));
     }
 }

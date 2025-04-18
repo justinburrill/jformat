@@ -4,6 +4,7 @@ using jformat.extensions;
 FormatConfig config = new();
 var supportedFileTypes = (string[])["json"];
 
+// TODO: give options for just removing whitespace
 void PrintUsage()
 {
     Console.WriteLine("Usage:");

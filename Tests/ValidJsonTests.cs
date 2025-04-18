@@ -200,7 +200,6 @@ public class ValidJsonTests
         Assert.True(IsValidJson(@"{ ""space"": "" "" }"));
         Assert.True(IsValidJson("{ \"quote\": \" \\\" \"}"));
         Assert.True(IsValidJson("{ \"backslash\": \"\\\\\"}"));
-        Assert.True(IsValidJson("{ \"controls\": \"\b\f\n\r\t\"}"));
         Assert.True(IsValidJson(@"{ ""slash"": ""/ & \/""}"));
         Assert.True(IsValidJson("{ \"alpha\": \"abcdefghijklmnopqrstuvwyz\"}"));
         Assert.True(IsValidJson("{ \"ALPHA\": \"ABCDEFGHIJKLMNOPQRSTUVWYZ\"}"));
@@ -217,5 +216,94 @@ public class ValidJsonTests
         Assert.True(IsValidJson("{\"url\": \"http://www.JSON.org/\"}"));
         Assert.True(IsValidJson("{\"comment\": \"// /* <!-- --\"}"));
         Assert.True(IsValidJson("{\" #  -- --> */\": \" \"}"));
+    }
+
+    [Fact]
+    public void InvalidJsonStrings()
+    {
+        Assert.False(IsValidJson("{"));
+        Assert.False(IsValidJson("{ 3 : 4 }"));
+        Assert.False(IsValidJson("{ 3 : tru }"));
+        Assert.False(IsValidJson("{ \"a : false }"));
+        Assert.False(IsValidJson("{\"Extra value after close\": true} \"misplaced quoted value\""));
+        Assert.False(IsValidJson("{\"Illegal expression\": 1 + 2}"));
+        Assert.False(IsValidJson("{\"Illegal invocation\": alert()}"));
+        Assert.False(IsValidJson("{\"Numbers cannot have leading zeroes\": 013}"));
+        Assert.False(IsValidJson("{\"Numbers cannot be hex\": 0x14}"));
+        Assert.False(IsValidJson("[\"Illegal backslash escape: \x15\"]"));
+        Assert.False(IsValidJson("[\naked]"));
+        Assert.False(IsValidJson("[\"Illegal backslash escape: \017\"]"));
+        Assert.False(IsValidJson("{\"Missing colon\" null}"));
+        Assert.False(IsValidJson("[\"Unclosed array\""));
+        Assert.False(IsValidJson("{\"Double colon\":: null}"));
+        Assert.False(IsValidJson("{\"Comma instead of colon\", null}"));
+        Assert.False(IsValidJson("[\"Colon instead of comma\": false]"));
+        Assert.False(IsValidJson("[\"Bad value\", truth]"));
+        Assert.False(IsValidJson("['single quote']"));
+        Assert.False(IsValidJson("[\"\ttab\tcharacter\tin\tstring\t\"]"));
+        Assert.False(IsValidJson("[\"line\n...[78]"));
+        Assert.False(IsValidJson("[\"line\\n...[79]"));
+        Assert.False(IsValidJson("[0e]"));
+        Assert.False(IsValidJson("{unquoted_key: \"keys must be quoted\"}"));
+        Assert.False(IsValidJson("[0e+]"));
+        Assert.False(IsValidJson("[0e+-1]"));
+        Assert.False(IsValidJson("{\"Comma instead if closing brace\": true,"));
+        Assert.False(IsValidJson("[\"mismatch\"}"));
+        Assert.False(IsValidJson("[\"extra comma\",]"));
+        Assert.False(IsValidJson("[\"double extra comma\",,]"));
+        Assert.False(IsValidJson("[   , \"<-- missing value\"]"));
+        Assert.False(IsValidJson("[\"Comma after the close\"],"));
+        Assert.False(IsValidJson("[\"Extra close\"]]"));
+        Assert.False(IsValidJson("{\"Extra comma\": true,}"));
+    }
+
+    [Fact]
+    public void JsonStringsWithCtrlChars()
+    {
+        var valid = @"{
+  ""tab"": "" \t "",
+  ""newline"": "" \n "",
+  ""carriage_return"": "" \r "",
+  ""backslash"": "" \\ "",
+  ""quote"": "" \"" ""
+}";
+        Assert.True(IsValidJson(valid));
+    }
+
+    // the following ranges of characters are not allowed:
+    // u0000 to u001f, as well as u007f, u0080 to u009f, u00ad, u0600 to u0605, u200b, u200b to u200d, u2028 to u2029, u2060, and ufeff
+    [Fact]
+    public void InvalidJsonStringsWithCtrlChars()
+    {
+        // inexhaustive list
+        Assert.False(IsValidJson("\"control_char_1\": \"\u0000\""));
+        Assert.False(IsValidJson("\"control_char_2\": \"\u0001\""));
+        Assert.False(IsValidJson("\"control_char_3\": \"\u0002\""));
+        Assert.False(IsValidJson("\"control_char_4\": \"\u0003\""));
+        Assert.False(IsValidJson("\"control_char_5\": \"\u0004\""));
+        Assert.False(IsValidJson("\"control_char_8\": \"\u0007\""));
+        Assert.False(IsValidJson("\"control_char_9\": \"\u0008\""));
+        Assert.False(IsValidJson("\"control_char_10\": \"\u0009\""));
+        Assert.False(IsValidJson("\"control_char_11\": \"\u000A\""));
+        Assert.False(IsValidJson("\"control_char_22\": \"\u0015\""));
+        Assert.False(IsValidJson("\"control_char_23\": \"\u0016\""));
+        Assert.False(IsValidJson("\"control_char_25\": \"\u0018\""));
+        Assert.False(IsValidJson("\"control_char_29\": \"\u001C\""));
+        Assert.False(IsValidJson("\"control_char_30\": \"\u001D\""));
+        Assert.False(IsValidJson("\"control_char_30\": \"\u001D\""));
+    }
+
+    [Fact]
+    public void InvalidJsonStringsWithUnicodeCtrlChars()
+    {
+        var iter = Enumerable.Range(0x0, 0x1f)
+                             .Concat(Enumerable.Range(0x80, 0x9f))
+                             .Concat(Enumerable.Range(0x600, 0x605))
+                             .Concat(Enumerable.Range(0x200b, 0x200d));
+        foreach (int num in iter.Concat([0x7f, 0xad, 0x200b, 0xfeff]))
+        {
+            var str = num.ToString("x4");
+            Assert.False(IsValidString(str));
+        }
     }
 }

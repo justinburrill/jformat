@@ -41,7 +41,7 @@ public static class JsonFormatter
         var outstr = new StringBuilder();
         char prev = input.Length > 0 ? input[0] : '\0';
         List<char> ws = [' ', '\n', '\t', '\r'];
-        foreach (var c in input)
+        foreach (char c in input)
         {
             if (c == '"' && prev != '\\') { quotecount++; }
             if (!ws.Contains(c) || quotecount % 2 != 0)
@@ -288,8 +288,10 @@ public static class JsonFormatter
         StringBuilder hextoken = new();
         foreach (char ch in input)
         {
-            // these control characters are not allowed
-            if ((int)ch is < 32 or >= 127)
+            // the following ranges of characters are not allowed:
+            // u0000 to u001f, as well as u007f, u0080 to u009f, u00ad, u0600 to u0605, u200b, u200b to u200d, u2028 to u2029, u2060, and ufeff
+
+            if ((int)ch is < 32 or 127 or (>= 0x80 and <= 0x9f))
             {
                 return false;
             }
@@ -323,7 +325,7 @@ public static class JsonFormatter
             if (escaping)
             {
                 if (ch == 'u') { hextoken.Append(ch); readingHexEscape = true; continue; } // need more characters if it's a hex code thing
-                if (!IsValidEscape(ch))
+                if (!IsValidEscapeChar(ch))
                 {
                     return false;
                 }
@@ -344,16 +346,22 @@ public static class JsonFormatter
     /// Pass in a character to see if it is "escapable"
     /// </summary>
     /// <param name="ch"></param>
-    public static bool IsValidEscape(char ch)
+    public static bool IsValidEscapeChar(char ch)
     {
         var options = new List<char> { '/', '\\', 'b', 'f', 'n', 'r', 't', '"' };
         return options.Contains(ch);
     }
 
+    /// <summary>
+    /// Check if a string is valid to be escaped, that is, to be placed after a backslash
+    /// </summary>
+    /// <param name="str">Something like \ or " or u1234 </param>
+    /// <returns><c>true</c> if valid, <c>false</c> if invalid</returns>
     public static bool IsValidEscape(string str)
     {
+
         if (str.Length == 0) { return false; }
-        if (str.Length == 1 && IsValidEscape(str[0]))
+        if (str.Length == 1 && IsValidEscapeChar(str[0]))
         {
             return true;
         }
@@ -379,6 +387,8 @@ public static class JsonFormatter
     public static bool IsValidNumber(string input)
     {
         var signs = new List<char> { '+', '-' };
+        bool notEmpty(string x) => x.Length > 0;
+        bool startsWithZero(string x) => x.Length > 0 && x[0] == '0' && x.Length > 1;
         bool validOnlyDigits(string x) => x.All(char.IsDigit) && x.Length > 0;
         string strWithoutSign(string x)
         {
@@ -387,6 +397,7 @@ public static class JsonFormatter
             return hasSign ? x[1..] : x;
         }
         bool validWithSign(string x) => validOnlyDigits(strWithoutSign(x));
+        // check if x is numeric and allows starting with '-'
         bool validWithNegOnly(string x) => x.Length > 0 && validOnlyDigits(x[0] == '-' ? x[1..] : x);
 
         var split_exponent = input.ToLower().Split('e');
@@ -397,7 +408,7 @@ public static class JsonFormatter
             if (!validWithSign(exponent)) { return false; }
         }
         var split_decimal = split_exponent[0].Split('.');
-        return split_decimal.Length is not > 2 and not < 1 && (split_decimal.Length == 1
+        return notEmpty(input) && !startsWithZero(split_decimal[0]) && split_decimal.Length is not > 2 and not < 1 && (split_decimal.Length == 1
             ? validWithNegOnly(split_decimal[0])
             : split_decimal.Length == 2
             ? validWithNegOnly(split_decimal[0]) && validOnlyDigits(split_decimal[1])
@@ -500,7 +511,6 @@ public static class JsonFormatter
             }
             switch (c)
             {
-                // TODO: make it not append newlines if i'm in a string... make some tests for these maybe
                 case '"':
                     if (!in_string) { in_string = true; }
                     else if (in_string && last != '\\') { in_string = false; }
