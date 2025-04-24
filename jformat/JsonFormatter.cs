@@ -1,7 +1,5 @@
 ﻿using System.Text;
 
-using jformat.extensions;
-
 namespace jformat;
 
 public static class JsonFormatter
@@ -124,9 +122,10 @@ public static class JsonFormatter
                     case '}':
                         object_keys.Remove(objs_deep, out List<string>? keys_for_that_level);
                         // check for duplicate keys
-                        if (keys_for_that_level is not null && (keys_for_that_level.Count != keys_for_that_level.Distinct().Count()))
+                        if (keys_for_that_level is not null && keys_for_that_level.HasDuplicates(out IEnumerable<string> dupes))
+
                         {
-                            throw new ArgumentException("Duplicate keys in provided json");
+                            throw new ArgumentException($"Duplicate keys in provided json: {dupes}");
                         }
                         objs_deep--;
                         end_token_and_end_new_token = true;

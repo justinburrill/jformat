@@ -1,5 +1,4 @@
 ﻿using jformat;
-using jformat.extensions;
 
 FormatConfig config = new();
 var supportedFileTypes = (string[])["json"];
