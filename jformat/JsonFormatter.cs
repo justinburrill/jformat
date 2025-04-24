@@ -184,7 +184,7 @@ public static class JsonFormatter
         }
         // check for unclosed brackets
         return objs_deep != 0 || arrays_deep != 0
-            ? throw new ArgumentException("Tokenizer was passed invalid json with unmatched brackets") // bad json!!
+            ? throw new ArgumentException("Tokenizer was passed invalid json with unmatched brackets.") // bad json!!
             : strings; // success!
     }
 
@@ -207,16 +207,29 @@ public static class JsonFormatter
     /// </summary>
     /// <param name="input">String representing a JSON object, inside { curly braces }</param>
     /// <returns>True if valid, false if invalid</returns>
-    public static bool IsValidObject(string input)
+    public static bool IsValidObject(string input, out string? error)
     {
-        if (input.Length == 0) { return false; }
+
+        if (input.Length == 0)
+        {
+            error = "Empty input.";
+            return false;
+        }
 
         input = RemoveWhitespace(input);
-        if (input[0] != '{' || input[^1] != '}') { return false; }
+        if (input[0] != '{' || input[^1] != '}')
+        {
+            error = "Input does not have surrounding { curly brackets }.";
+            return false;
+        }
 
         List<string> tokens;
         try { tokens = TokenizeJsonObj(input); }
-        catch (ArgumentException) { return false; }
+        catch (ArgumentException err)
+        {
+            error = err.Message;
+            return false;
+        }
 
         int bracketsDeep = 0;
         List<TokenType> validNextTypes = [TokenType.OpenBracket, TokenType.Key];
@@ -231,6 +244,7 @@ public static class JsonFormatter
             if (type == TokenType.ClosingBracket) { bracketsDeep--; }
             if (type is null)
             {
+                error = $"Unrecognized or invalid token \"{token}\"";
                 return false;
             }
             validNextTypes = type switch
@@ -244,8 +258,19 @@ public static class JsonFormatter
                 _ => throw new NotImplementedException(),
             };
         }
-        return bracketsDeep == 0;
+        if (bracketsDeep == 0)
+        {
+            error = null;
+            return true;
+        }
+        else
+        {
+            error = "Unmatched brackets.";
+            return false;
+        }
     }
+
+    public static bool IsValidObject(string input) => IsValidObject(input, out _);
 
     public static bool HasValidBrackets(string input)
     {
@@ -494,7 +519,7 @@ public static class JsonFormatter
 
     public static string FormatJsonString(string input)
     {
-        if (!IsValidObject(input)) { throw new ArgumentException($"Invalid JSON provided to FormatJsonString: {input}"); }
+        if (!IsValidObject(input, out string? error)) { throw new ArgumentException($"Invalid JSON provided to FormatJsonString: {error}", paramName: nameof(input)); }
         var no_whitespace = RemoveWhitespace(input);
         int tab_depth = 0;
         bool in_string = false;
@@ -602,9 +627,9 @@ public static class JsonFormatter
                 Console.Write(formatted + "\n"); // print result by default
             }
         }
-        catch (ArgumentException)
+        catch (ArgumentException err)
         {
-            Console.WriteLine($"Couldn't format {path} invalid JSON");
+            Console.WriteLine($"Couldn't format {path} because it is invalid JSON: {err.Message}");
         }
     }
 }
