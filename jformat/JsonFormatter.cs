@@ -599,11 +599,12 @@ public static class JsonFormatter
             var result = IsValidJson(text);
             if (result)
             {
-                Console.WriteLine("The provided JSON is valid.");
+                Console.WriteLine($"The provided JSON at {path} is valid.");
             }
             else
             {
-                Console.WriteLine("The provided JSON is NOT valid.");
+                Console.WriteLine($"The provided JSON at {path} is NOT valid.");
+                Environment.Exit(1);
             }
             return;
         }
@@ -629,6 +630,7 @@ public static class JsonFormatter
         catch (ArgumentException err)
         {
             Console.WriteLine($"Couldn't format {path} because it is invalid JSON: {err.Message}");
+            Environment.Exit(1);
         }
     }
 }

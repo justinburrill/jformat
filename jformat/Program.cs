@@ -16,6 +16,9 @@ void PrintUsage()
     //Console.WriteLine(" -c\t");
 }
 
+// TODO
+// by default, the formatted output should be sent to stdout
+// providing the -o parameter should allow the user to specify a file name to output to.
 void HandleArgumentOption(string arg)
 {
     if (arg.StartsWith("--")) { Console.WriteLine("No support for long argument names yet."); PrintUsage(); return; }
@@ -100,8 +103,6 @@ foreach (string arg in args)
 
 Console.WriteLine($"Formatting {filesToFormat.Count} files...");
 
-// by default, the formatted output should be sent to stdout
-// providing the -o parameter should allow the user to specify a file name to output to.
 foreach (string fp in filesToFormat)
 {
     try
