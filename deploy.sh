@@ -1,3 +1,5 @@
+echo "Make sure to run this from WINDOWS, doesn't work properly on linux for some reason"
+
 config="--tl:on -c release"
 sc="--self-contained=true"
 sf="$config -p:PublishSingleFile=true"
