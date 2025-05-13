@@ -586,30 +586,41 @@ public static class JsonFormatter
     }
 
     /// <summary>
-    /// Format file in place
+    /// Get text from file and format
     /// </summary>
     /// <param name="path">Relative path of the .json file</param>
-    public static void FormatByFilepath(string path, FormatConfig config)
+    /// <returns>Formatted json text</returns>
+    public static string FormatByFilepath(string path)
     {
         StreamReader sr = new(path);
         string text = sr.ReadToEnd();
         sr.Close();
+        return text;
+    }
+
+    /// <summary>
+    /// Format/test the provided JSON according to the config
+    /// </summary>
+    /// <param name="text">Unformatted JSON text</param>
+    /// <param name="config">Config from command line arguments</param>
+    public static void PerformAction(string text, FormatConfig config)
+    {
         if (config.ValidateOnly)
         {
-            var result = IsValidJson(text);
-            if (result)
+            if (IsValidJson(text))
             {
-                Console.WriteLine($"The provided JSON at {path} is valid.");
+                Console.WriteLine($"The provided JSON is valid.");
             }
             else
             {
-                Console.WriteLine($"The provided JSON at {path} is NOT valid.");
+                Console.WriteLine($"The provided JSON is NOT valid.");
                 Environment.Exit(1);
             }
             return;
         }
         try
         {
+            string path = config.OutputPath;
             string formatted = FormatJsonString(text);
             if (config.Overwrite)
             {
@@ -629,7 +640,7 @@ public static class JsonFormatter
         }
         catch (ArgumentException err)
         {
-            Console.WriteLine($"Couldn't format {path} because it is invalid JSON: {err.Message}");
+            Console.WriteLine($"Couldn't format due to invalid JSON: {err.Message}");
             Environment.Exit(1);
         }
     }

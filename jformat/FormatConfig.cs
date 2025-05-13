@@ -8,10 +8,11 @@ public class FormatConfig
     public bool ValidateOnly { get => _validateOnly; set { _validateOnly = value; OutputToFile = false; Overwrite = false; } }
     private bool _overwrite = false;
     public bool Overwrite { get => _overwrite; set { _overwrite = value; OutputToFile = true; } }
-    public string OutputPath = ".";
+    public string OutputPath;
 
-    public FormatConfig(bool toFile = false, bool allowcommas = false)
+    public FormatConfig(string output = ".", bool toFile = false, bool allowcommas = false)
     {
+        OutputPath = output;
         OutputToFile = toFile;
         AllowTrailingCommas = allowcommas;
 

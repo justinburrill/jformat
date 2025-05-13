@@ -1,11 +1,21 @@
-﻿using jformat;
+﻿using System.Text;
+
+using jformat;
+
+// TODO: output colouring?
 
 FormatConfig config = new();
 var supportedFileTypes = (string[])["json"];
+string defaultFileName = "JSON";
+bool pipedin = Console.IsInputRedirected;
+bool pipedout = Console.IsOutputRedirected;
+
+void fail() { Environment.Exit(1); }
 
 // TODO: give options for just removing whitespace
 void PrintUsage()
 {
+    if (pipedout) { fail(); } // fail here if the output is supposed to go somewhere
     Console.WriteLine("Usage:");
     Console.WriteLine("\tjformat [options] [/path/to/input/files]");
     Console.WriteLine("Options:");
@@ -16,12 +26,21 @@ void PrintUsage()
     //Console.WriteLine(" -c\t");
 }
 
+// usually don't want extra messages if the input is being redirected away
+void log(string s)
+{
+    if (!pipedout)
+    {
+        Console.WriteLine($"{s}");
+    }
+}
+
 // TODO
 // by default, the formatted output should be sent to stdout
 // providing the -o parameter should allow the user to specify a file name to output to.
 void HandleArgumentOption(string arg)
 {
-    if (arg.StartsWith("--")) { Console.WriteLine("No support for long argument names yet."); PrintUsage(); return; }
+    if (arg.StartsWith("--")) { log("No support for long argument names yet."); PrintUsage(); return; }
     foreach (char ch in arg.RemovedPrefix("-"))
     {
         switch (ch)
@@ -42,7 +61,8 @@ void HandleArgumentOption(string arg)
                 config.Overwrite = true;
                 break;
             default:
-                Console.WriteLine($"Unrecognized flag {arg}.");
+                log($"Unrecognized flag {arg}.");
+                fail();
                 break;
         }
     }
@@ -60,20 +80,15 @@ bool IsSupportedFileType(string filename)
     {
         return supportedFileTypes.Contains(GetFileType(filename));
     }
-    catch
+    catch (ArgumentException err)
     {
+        log(err.Message);
         return false;
     }
 }
 
 var filesToFormat = new List<string>();
 var cwd = Directory.GetCurrentDirectory();
-if (args.Length == 0)
-{
-    Console.WriteLine("No files provided.");
-    PrintUsage();
-    return;
-}
 
 foreach (string arg in args)
 {
@@ -95,23 +110,53 @@ foreach (string arg in args)
             }
             else
             {
-                Console.WriteLine($"Can't format file '{arg}' because that filetype is not supported.");
+                log($"Can't format file '{arg}' because that filetype is not supported.");
+                fail();
             }
             break;
     }
 }
 
-Console.WriteLine($"Formatting {filesToFormat.Count} files...");
-
-foreach (string fp in filesToFormat)
+if (pipedin)
 {
-    try
+    StringBuilder input = new();
+    using StreamReader s = new(Console.OpenStandardInput(), Console.InputEncoding);
+    string? line;
+    while ((line = s.ReadLine()) != null)
     {
-        JsonFormatter.FormatByFilepath(fp, config);
+        input.AppendFormat(" {0}", line!);
     }
-    catch (FileNotFoundException e) { Console.WriteLine(e.Message); }
-    catch (Exception e)
+    config.OutputPath = defaultFileName; // piped input has no filename
+    string formatted = JsonFormatter.FormatJsonString(input.ToString());
+    JsonFormatter.PerformAction(formatted, config);
+}
+else
+{
+    if (args.Length == 0)
     {
-        Console.WriteLine(e.StackTrace);
+        log("No files provided.");
+        PrintUsage();
+        return;
+    }
+
+    log($"Processing {filesToFormat.Count} files...");
+
+    foreach (string fp in filesToFormat)
+    {
+        try
+        {
+            config.OutputPath = fp;
+            string formatted = JsonFormatter.FormatByFilepath(fp);
+            JsonFormatter.PerformAction(formatted, config);
+        }
+        catch (FileNotFoundException e) { log(e.Message); fail(); }
+        catch (Exception e)
+        {
+            log("Uncaught error:");
+            log(e.Message);
+            log(e.StackTrace!);
+            fail();
+        }
     }
 }
+
