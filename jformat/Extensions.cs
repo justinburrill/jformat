@@ -1,6 +1,4 @@
-﻿using System.Runtime.CompilerServices;
-
-namespace jformat;
+﻿namespace jformat;
 
 public static class Extensions
 {
